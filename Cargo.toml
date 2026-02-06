@@ -1,0 +1,84 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/*"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Vyacheslav Ivanov <pugemon03@gmail.com>"]
+
+# ---------------- PROFILES ----------------
+
+[profile.dev]
+opt-level = 1
+debug = true
+incremental = true
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false
+
+# ---------------- DEPENDENCIES ----------------
+
+[workspace.dependencies]
+
+# local
+cd-core = { path = "crates/cd-core" }
+
+# runtime
+tokio = { version = "1.49.0", default-features = false, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+    "net"
+] }
+
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+
+# errors
+thiserror = "1.0.63"
+
+# data
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+# ecs
+hecs = "0.11.0"
+
+# math
+glam = "0.31.0"
+
+# ---------------- LINTS ----------------
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+dead_code = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+
+# ---------------- FEATURES ----------------
+
+[workspace.features]
+default = ["server"]
+server = []
+tools = []
+bench = []
