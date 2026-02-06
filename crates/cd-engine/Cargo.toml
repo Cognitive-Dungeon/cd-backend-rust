@@ -1,0 +1,15 @@
+[package]
+name = "cd-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+cd-core = { workspace = true }
+cd-ecs = { workspace = true }
+cd-map = { workspace = true }
+hecs = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

@@ -8,6 +8,7 @@ authors.workspace = true
 cd-core = { workspace = true }
 cd-ecs = { path = "../cd-ecs" }
 cd-map = { path = "../cd-map" }
+cd-engine = { path = "../cd-engine" }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

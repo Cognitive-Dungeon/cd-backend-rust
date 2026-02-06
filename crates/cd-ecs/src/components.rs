@@ -1,5 +1,4 @@
 use cd_core::{ObjectGuid, WorldPos};
-use serde::{Deserialize, Serialize};
 
 // --- Core Components ---
 

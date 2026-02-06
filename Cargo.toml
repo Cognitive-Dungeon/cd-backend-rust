@@ -36,7 +36,12 @@ strip = false
 [workspace.dependencies]
 
 # local
+cd-app = { path = "crates/cd-app" }
+cd-common = { path = "crates/cd-common" }
 cd-core = { path = "crates/cd-core" }
+cd-ecs = { path = "crates/cd-ecs" }
+cd-engine = { path = "crates/cd-engine" }
+cd-map = { path = "crates/cd-map" }
 
 # runtime
 tokio = { version = "1.49.0", default-features = false, features = [

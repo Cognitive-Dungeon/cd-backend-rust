@@ -95,6 +95,7 @@ version = "0.1.0"
 dependencies = [
  "cd-core",
  "cd-ecs",
+ "cd-engine",
  "cd-map",
  "hecs",
  "tokio",
@@ -122,6 +123,17 @@ dependencies = [
  "cd-core",
  "hecs",
  "serde",
+]
+
+[[package]]
+name = "cd-engine"
+version = "0.1.0"
+dependencies = [
+ "cd-core",
+ "cd-ecs",
+ "cd-map",
+ "hecs",
+ "tracing",
 ]
 
 [[package]]

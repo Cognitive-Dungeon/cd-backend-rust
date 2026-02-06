@@ -1,50 +1,57 @@
 use cd_core::{ObjectGuid, WorldPos};
-use cd_ecs::components::{Name, Position, Render, Stats};
+use cd_engine::{Engine, InputCmd};
 use cd_map::{Chunk, Tile, MaterialId, TileFlags};
-use hecs::World;
 use tracing::{info, Level};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_max_level(Level::DEBUG)
+        .with_max_level(Level::INFO)
         .init();
 
-    info!("🚀 Initializing Engine Context...");
+    info!("🚀 Initializing Cognitive Dungeon Server...");
 
-    // 1. Создаем Мир ECS
-    let mut ecs_world = World::new();
+    // 1. Инициализация Движка
+    let mut engine = Engine::new();
 
-    // 2. Спавним игрока (Archetype)
-    let player_entity = ecs_world.spawn((
-        Name("Leeroy Jenkins".to_string()),
-        Position(WorldPos::new(10, 10, 0)),
-        Render { glyph: '@', color_rgb: 0x00FF00 },
-        Stats { hp: 100, max_hp: 100, mana: 50, max_mana: 50, is_dead: false }
-    ));
-
-    info!("ECS: Spawned Player Entity: {:?}", player_entity);
-
-    // 3. Тест доступа к компонентам
-    // Query - это основной способ работы в ECS
-    for (id, (name, pos)) in ecs_world.query::<(&Name, &Position)>().iter() {
-        info!("Entity {:?}: '{}' at {:?}", id, name.0, pos.0);
-    }
-
-    // 4. Тест Карты
+    // 2. Создаем карту (для теста)
     let mut chunk = Chunk::new();
-    let wall = Tile {
-        material: MaterialId(10), // Stone Wall
-        flags: TileFlags::SOLID | TileFlags::OPAQUE,
+    // Ставим стену на (10, 11)
+    chunk.set(10, 11, Tile {
+        material: MaterialId(1),
+        flags: TileFlags::SOLID,
         variant: 0,
-    };
+    });
+    engine.map.insert_chunk(0, 0, chunk);
 
-    // Ставим стену в (5, 5) внутри чанка
-    chunk.set(5, 5, wall);
+    // 3. Спавним игрока
+    let player_id = ObjectGuid::new(1, 1, 1, 1);
+    let start_pos = WorldPos::new(10, 10, 0);
+    engine.spawn_player(player_id, "Tester".to_string(), start_pos);
 
-    // Проверяем
-    if let Some(tile) = chunk.get(5, 5) {
-        info!("Map: Tile at (5,5) is Solid? {}", tile.is_solid()); // true
-        info!("Map: Tile at (0,0) is Solid? {}", chunk.get(0, 0).unwrap().is_solid()); // false
-    }
+    // 4. Эмуляция Игрового Цикла (3 тика)
+    info!("--- STARTING LOOP ---");
+
+    // Тик 1: Попытка пройти сквозь стену
+    info!("Tick 1: Try move into wall");
+    let inputs = vec![InputCmd::Move {
+        entity_guid: player_id,
+        target: WorldPos::new(10, 11, 0), // Там стена!
+    }];
+    engine.tick(inputs);
+
+    // Тик 2: Движение в пустоту
+    info!("Tick 2: Move to empty space");
+    let inputs = vec![InputCmd::Move {
+        entity_guid: player_id,
+        target: WorldPos::new(10, 12, 0), // Там пусто (Chunk default is void/empty, но в нашей логике world.is_solid проверяет чанк)
+        // В world.rs мы написали: если чанка нет - false (пусто).
+        // Чанк (0,0) есть, тайл (10,12) пустой (VOID).
+        // Tile::VOID flags = NONE, значит is_solid = false.
+    }];
+    engine.tick(inputs);
+
+    // Тик 3: Просто холостой ход
+    info!("Tick 3: Idle");
+    engine.tick(vec![]);
 }
