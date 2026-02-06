@@ -42,6 +42,7 @@ cd-core = { path = "crates/cd-core" }
 cd-ecs = { path = "crates/cd-ecs" }
 cd-engine = { path = "crates/cd-engine" }
 cd-map = { path = "crates/cd-map" }
+cd-net = { path = "crates/cd-net" }
 
 # runtime
 tokio = { version = "1.49.0", default-features = false, features = [
