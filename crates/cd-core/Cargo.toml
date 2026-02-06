@@ -6,4 +6,8 @@ edition.workspace = true
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
-rkyv = { workspace = true, optional = true }
+rkyv = { version = "0.7.46", features = ["validation"], optional = true }
+
+[features]
+default = []
+rkyv = ["dep:rkyv"]

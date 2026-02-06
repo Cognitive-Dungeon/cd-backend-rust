@@ -1,0 +1,13 @@
+[package]
+name = "cd-ecs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+cd-core = { workspace = true }
+hecs = { workspace = true }
+serde = { workspace = true }
+
+[lints]
+workspace = true

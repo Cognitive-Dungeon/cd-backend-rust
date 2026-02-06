@@ -2,9 +2,16 @@
 name = "cd-app"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
 
 [dependencies]
 cd-core = { workspace = true }
+cd-ecs = { path = "../cd-ecs" }
+cd-map = { path = "../cd-map" }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+hecs = { workspace = true }
+
+[lints]
+workspace = true

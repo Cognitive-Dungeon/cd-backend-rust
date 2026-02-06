@@ -56,10 +56,9 @@ thiserror = "2.0.18"
 # data
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-rkyv = { version = "0.8.14" }
 
 # ecs
-hecs = "0.11.0"
+hecs = "0.10.5"
 
 # math
 glam = "0.31.0"
@@ -80,7 +79,6 @@ todo = "warn"
 
 [workspace.features]
 default = ["server"]
-rkyv = ["dep:rkyv"]
 server = []
 tools = []
 bench = []
