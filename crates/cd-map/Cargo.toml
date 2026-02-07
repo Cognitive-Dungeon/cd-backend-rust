@@ -9,6 +9,7 @@ cd-core = { workspace = true }
 bitflags = { version = "2.10.0", features = ["serde"] }
 serde = { workspace = true }
 serde-big-array = "0.5.1"
+ahash = "0.8"
 
 [lints]
 workspace = true

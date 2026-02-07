@@ -6,6 +6,7 @@ use cd_map::{WorldMap, SpatialGrid};
 use hecs::{World, Entity, CommandBuffer};
 use std::collections::HashMap;
 use tracing::{info, warn};
+use crate::registry::EntityRegistry;
 
 pub struct Engine {
     // ECS
@@ -21,6 +22,7 @@ pub struct Engine {
 
     // Буфер структурных изменений (Spawn/Despawn)
     cmd_buffer: CommandBuffer,
+    entity_registry: EntityRegistry
 }
 
 impl Default for Engine {
@@ -31,6 +33,7 @@ impl Default for Engine {
             grid: SpatialGrid::new(),
             entity_index: HashMap::new(),
             cmd_buffer: CommandBuffer::new(),
+            entity_registry: EntityRegistry::new(),
         }
     }
 }
@@ -47,13 +50,13 @@ impl Engine {
             Position(pos),
             Name(name.clone()),
             Render { glyph: '@', color_rgb: 0x00FF00 },
-            Stats { hp: 100, max_hp: 100, mana: 100, max_mana: 100, is_dead: false },
+            Stats { hp: 100, max_hp: 100, mana: 100, max_mana: 100 },
             // Важно: храним GUID внутри компонента тоже, для обратного поиска
             cd_ecs::components::Controller { agent_id: "player".into() },
         ));
 
-        // 2. Регистрируем в индексах
-        self.entity_index.insert(guid, entity);
+        // 2. Регистрируем в регистрах
+        self.entity_registry.register(guid, entity);
         self.grid.insert(guid, pos);
 
         info!("Spawned [{}] {} at {:?}", guid, name, pos);
