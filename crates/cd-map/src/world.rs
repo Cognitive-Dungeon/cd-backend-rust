@@ -12,21 +12,22 @@ pub struct WorldMap {
 
     // Динамический слой: Шарды
     // Массив фиксированного размера
-    shards: Vec<Shard>,
+    shards: Box<[Shard; SHARD_COUNT]>,
 
     default_tile: Tile,
 }
 
 impl WorldMap {
     pub fn new() -> Self {
-        let mut shards = Vec::with_capacity(SHARD_COUNT);
+        let mut shards_vec = Vec::with_capacity(SHARD_COUNT);
         for _ in 0..SHARD_COUNT {
-            shards.push(Shard::new());
+            shards_vec.push(Shard::new());
         }
+        let shards = shards_vec.try_into().ok().expect("Failed to init shards");
 
         Self {
             regions: RwLock::new(HashMap::new()),
-            shards,
+            shards: Box::new(shards),
             default_tile: Tile::default(),
         }
     }
@@ -97,8 +98,7 @@ impl WorldMap {
         shard.set_tile(chunk_key, lx, ly, tile, base_chunk);
     }
 
-    pub fn put_chunk(&self, chunk_key: WorldPos, mut chunk: Chunk) {
-        chunk.rebuild_masks();
+    pub fn put_chunk(&self, chunk_key: WorldPos, chunk: Chunk) {
         let region_key = chunk_key.region_key();
         let (cx, cy, _) = chunk_key.xyz();
         let rx = (cx & REGION_MASK) as usize;
@@ -106,7 +106,8 @@ impl WorldMap {
 
         let mut regions = self.regions.write().unwrap();
         let region = regions.entry(region_key).or_insert_with(Region::new);
-        region.put_chunk(rx, ry, chunk);
+        let dest_chunk = region.get_or_create_chunk(rx, ry);
+        *dest_chunk = chunk;
     }
 
     // --- Private Helpers ---
@@ -120,7 +121,7 @@ impl WorldMap {
             let rx = (cx & REGION_MASK) as usize;
             let ry = (cy & REGION_MASK) as usize;
             if let Some(chunk) = region.get_chunk(rx, ry) {
-                return chunk.get_tile(lx, ly);
+                return Some(chunk.get_tile(lx, ly));
             }
         }
         None

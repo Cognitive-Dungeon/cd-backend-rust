@@ -11,5 +11,13 @@ serde = { workspace = true }
 serde-big-array = "0.5.1"
 ahash = "0.8"
 
+[dev-dependencies]
+criterion = "0.8"
+rand = "0.9" # Нужно для генерации случайного доступа, чтобы проверить кэш
+
+[[bench]]
+name = "map_benchmark"
+harness = false
+
 [lints]
 workspace = true
