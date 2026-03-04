@@ -9,6 +9,7 @@ cd-core = { workspace = true }
 cd-ecs = { workspace = true }
 cd-map = { workspace = true }
 cd-telemetry = { workspace = true }
+cd-data = { workspace = true }
 hecs = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }

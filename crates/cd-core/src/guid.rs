@@ -6,7 +6,10 @@ use std::fmt;
 /// [ Shard (8) | Type (8) | Generation (16) | Index (32) ]
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[cfg_attr(feature = "rkyv", derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct ObjectGuid(u64);
 
 impl ObjectGuid {
@@ -66,6 +69,11 @@ impl ObjectGuid {
     /// Получить "сырое" значение (для БД или Сети)
     pub fn as_u64(&self) -> u64 {
         self.0
+    }
+    
+    /// Восстановить GUID из сырого u64 (для десериализации из storage layer)
+    pub fn from_raw(raw: u64) -> Self {
+        Self(raw)
     }
 }
 

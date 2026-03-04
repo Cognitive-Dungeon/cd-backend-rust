@@ -234,6 +234,8 @@ name = "cd-app"
 version = "0.1.0"
 dependencies = [
  "cd-core",
+ "cd-data",
+ "cd-data-json",
  "cd-ecs",
  "cd-engine",
  "cd-map",
@@ -258,6 +260,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "cd-data"
+version = "0.1.0"
+dependencies = [
+ "cd-core",
+ "cd-map",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "cd-data-json"
+version = "0.1.0"
+dependencies = [
+ "cd-core",
+ "cd-data",
+ "cd-map",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "cd-ecs"
 version = "0.1.0"
 dependencies = [
@@ -271,6 +296,7 @@ name = "cd-engine"
 version = "0.1.0"
 dependencies = [
  "cd-core",
+ "cd-data",
  "cd-ecs",
  "cd-map",
  "cd-telemetry",

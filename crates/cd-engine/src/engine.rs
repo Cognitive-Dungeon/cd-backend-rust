@@ -2,6 +2,7 @@ use crate::registry::EntityRegistry;
 use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
+use cd_data::{WorldRepository, EntityRepository};
 use cd_ecs::components::{Name, Position, Render, Stats};
 use cd_map::{SpatialGrid, WorldMap};
 use cd_telemetry::{EngineEvent, NullSink, TelemetrySink};
@@ -27,32 +28,29 @@ pub struct Engine {
     current_tick: TickId,
 
     telemetry: Arc<dyn TelemetrySink>,
+    world_repo: Option<Arc<dyn WorldRepository>>,
+    entity_repo: Option<Arc<dyn EntityRepository>>,
 }
 
-impl Default for Engine {
-    fn default() -> Self {
+impl Engine {
+    /// Создаётся только через EngineBuilder — явные зависимости.
+    pub(crate) fn from_builder(
+        world_seed: u64,
+        telemetry: Arc<dyn TelemetrySink>,
+        world_repo: Option<Arc<dyn WorldRepository>>,
+        entity_repo: Option<Arc<dyn EntityRepository>>,
+    ) -> Self {
         Self {
             world: World::new(),
             map: WorldMap::new(),
             grid: SpatialGrid::new(),
             cmd_buffer: CommandBuffer::new(),
             entity_registry: EntityRegistry::new(),
-            world_seed: 0xDEAD_CAFE_BABE_1337,
+            world_seed,
             current_tick: TickId::default(),
-            telemetry: Arc::new(NullSink),
-        }
-    }
-}
-
-impl Engine {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn with_telemetry(sink: Arc<dyn TelemetrySink>) -> Self {
-        Self {
-            telemetry: sink,
-            ..Self::default()
+            telemetry,
+            world_repo,
+            entity_repo,
         }
     }
 
@@ -170,12 +168,36 @@ impl Engine {
             .collect()
     }
 
-    /// Загружает чанк в статический слой карты.
-    /// Принимает chunk-координаты (не тайловые).
-    pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
-        let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
-        self.map.put_chunk(chunk_key, chunk);
+    /// Загрузить чанк напрямую (например, при генерации мира).
+pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
+    let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
+    self.map.put_chunk(chunk_key, chunk);
+}
+
+/// Загрузить чанк из репозитория.
+/// Если репозитория нет или чанка нет — тихо пропускает.
+pub fn load_chunk_from_repo(&mut self, chunk_x: i32, chunk_y: i32) {
+    let Some(ref repo) = self.world_repo else { return };
+    let key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
+
+    match repo.load_chunk(key) {
+        Ok(Some(chunk)) => {
+            self.map.put_chunk(key, chunk);
+            tracing::info!("Loaded chunk ({}, {}) from repository", chunk_x, chunk_y);
+        }
+        Ok(None) => {
+            tracing::debug!("Chunk ({}, {}) not found in repository", chunk_x, chunk_y);
+        }
+        Err(e) => {
+            tracing::warn!("Failed to load chunk ({}, {}): {}", chunk_x, chunk_y, e);
+            self.telemetry.emit(EngineEvent::ErrorIsolated {
+                tick_id: self.current_tick.0,
+                context: format!("load_chunk_from_repo ({}, {})", chunk_x, chunk_y),
+                error: e.to_string(),
+            });
+        }
     }
+}
 
     pub fn current_tick(&self) -> TickId {
         self.current_tick

@@ -10,6 +10,8 @@ cd-ecs = { path = "../cd-ecs" }
 cd-map = { path = "../cd-map" }
 cd-engine = { path = "../cd-engine" }
 cd-net = {path = "../cd-net"}
+cd-data      = { workspace = true }
+cd-data-json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

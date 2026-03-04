@@ -1,5 +1,6 @@
 use cd_core::{ObjectGuid, WorldPos};
-use cd_engine::{BroadcastSink, CommandBus, Engine};
+use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
+use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
 use cd_net::{protocol::EntityView, protocol::ServerPacket};
 use std::thread;
@@ -24,9 +25,21 @@ async fn main() {
     let snapshot_tx_net = snapshot_tx.clone();
 
     // 2. Запускаем Движок в отдельном OS потоке (CPU Bound)
+    let world_repo = JsonWorldRepository::new("./data").expect("Failed to init world repository");
+    let entity_repo =
+        JsonEntityRepository::new("./data").expect("Failed to init entity repository");
+
     let telemetry_sink = std::sync::Arc::new(telemetry_sink);
+    let world_repo = std::sync::Arc::new(world_repo);
+    let entity_repo = std::sync::Arc::new(entity_repo);
+
     thread::spawn(move || {
-        let mut engine = Engine::with_telemetry(telemetry_sink);
+        let mut engine = EngineBuilder::new()
+            .telemetry(telemetry_sink)
+            .world_repo(world_repo)
+            .entity_repo(entity_repo)
+            .world_seed(0xDEAD_CAFE_BABE_1337)
+            .build();
 
         // Setup Map (Test)
         let mut chunk = Chunk::new();

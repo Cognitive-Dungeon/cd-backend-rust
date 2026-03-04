@@ -1,0 +1,16 @@
+[package]
+name = "cd-data-json"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+cd-core = { workspace = true }
+cd-map  = { workspace = true }
+cd-data = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+thiserror   = { workspace = true }
+
+[lints]
+workspace = true
