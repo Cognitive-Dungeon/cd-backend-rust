@@ -1,39 +1,46 @@
-use cd_core::{ObjectGuid, WorldPos};
+// ПОЛНЫЙ ФАЙЛ:
+
 use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
-use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
+use cd_engine::{BroadcastSink, CommandBus, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
-use cd_net::{protocol::EntityView, protocol::ServerPacket};
-use std::thread;
+use cd_core::{ObjectGuid, WorldPos};
+use cd_net::protocol::{EntityView, ServerPacket};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
-use tracing::{Level, info};
+use tracing::{error, info, Level};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+    tracing_subscriber::fmt()
+        .with_max_level(Level::INFO)
+        .init();
 
     info!("🚀 Booting Cognitive Dungeon...");
 
-    // 1. Создаем каналы связи
-    // Сеть -> Движок (Команды)
+    // --- Каналы ---
     let (mut cmd_bus, cmd_sender) = CommandBus::new(1024);
-    let (telemetry_sink, telemetry_tx) = BroadcastSink::new(256);
-
-    // Движок -> Сеть (Снапшоты)
-    // Broadcast канал: один писатель (движок), много читателей (вебсокеты)
     let (snapshot_tx, _) = broadcast::channel::<ServerPacket>(16);
     let snapshot_tx_net = snapshot_tx.clone();
 
-    // 2. Запускаем Движок в отдельном OS потоке (CPU Bound)
-    let world_repo = JsonWorldRepository::new("./data").expect("Failed to init world repository");
-    let entity_repo =
-        JsonEntityRepository::new("./data").expect("Failed to init entity repository");
+    let (telemetry_sink, telemetry_tx) = BroadcastSink::new(256);
+    let telemetry_sink = Arc::new(telemetry_sink);
 
-    let telemetry_sink = std::sync::Arc::new(telemetry_sink);
-    let world_repo = std::sync::Arc::new(world_repo);
-    let entity_repo = std::sync::Arc::new(entity_repo);
+    // --- Репозитории ---
+    let world_repo = Arc::new(
+        JsonWorldRepository::new("./data").expect("Failed to init world repository"),
+    );
+    let entity_repo = Arc::new(
+        JsonEntityRepository::new("./data").expect("Failed to init entity repository"),
+    );
 
-    thread::spawn(move || {
+    // --- Сигнал остановки ---
+    // Используем пару каналов: main -> engine_thread и main -> net
+    let (engine_stop_tx, engine_stop_rx) = tokio::sync::oneshot::channel::<()>();
+    let (net_stop_tx, net_stop_rx) = tokio::sync::oneshot::channel::<()>();
+
+    // --- Engine Thread (CPU-bound, отдельный OS поток) ---
+    let engine_handle = std::thread::spawn(move || {
         let mut engine = EngineBuilder::new()
             .telemetry(telemetry_sink)
             .world_repo(world_repo)
@@ -41,68 +48,120 @@ async fn main() {
             .world_seed(0xDEAD_CAFE_BABE_1337)
             .build();
 
-        // Setup Map (Test)
+        // Setup начального состояния мира
         let mut chunk = Chunk::new();
-        chunk.set_tile(
-            5,
-            5,
-            Tile {
-                material: 1,
-                flags: TileFlags::SOLID,
-                variant: 0,
-            },
-        );
+        chunk.set_tile(5, 5, Tile { material: 1, flags: TileFlags::SOLID, variant: 0 });
         engine.load_chunk(0, 0, chunk);
 
-        // Spawn Test Player (чтобы было кем управлять)
-        // В реальной жизни это должно происходить по команде Login
-        let player_guid = ObjectGuid::new(1, 1, 1, 4); // index 4 (по длине слова "test")
+        let player_guid = ObjectGuid::new(1, 1, 1, 4);
         engine.spawn_player(player_guid, "NetPlayer".to_string(), WorldPos::new(0, 0, 0));
 
         let tick_rate = Duration::from_millis(50); // 20 TPS
+        let mut engine_stop_rx = engine_stop_rx;
 
         loop {
             let start = std::time::Instant::now();
 
+            // Проверяем сигнал остановки (non-blocking)
+            match engine_stop_rx.try_recv() {
+                Ok(_) => {
+                    info!("Engine received stop signal");
+                    break;
+                }
+                Err(tokio::sync::oneshot::error::TryRecvError::Empty) => {}
+                Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {
+                    // Sender упал — тоже останавливаемся
+                    error!("Engine stop channel closed unexpectedly");
+                    break;
+                }
+            }
+
+            // Тик
             let commands = cmd_bus.drain_sorted();
             engine.tick(commands);
 
-            // C. Генерация Снапшота (Mock)
-            // В реальной системе тут будет engine.create_snapshot()
-            let mut entities_view = Vec::new();
-
-            // Запрашиваем данные из ECS для рендера
-            // Тут мы нарушаем изоляцию для демо, в проде это будет внутри engine.snapshot()
-            for snap in engine.snapshot_entities() {
-                entities_view.push(EntityView {
-                    guid: snap
-                        .guid
-                        .map(|g| g.to_string())
-                        .unwrap_or_else(|| "unknown".to_string()),
+            // Снапшот
+            let entities_view: Vec<EntityView> = engine
+                .snapshot_entities()
+                .into_iter()
+                .map(|snap| EntityView {
+                    guid: snap.guid.map(|g| g.to_string()).unwrap_or_default(),
                     x: snap.x,
                     y: snap.y,
                     glyph: snap.glyph,
                     color: format!("#{:06X}", snap.color_rgb),
-                });
-            }
+                })
+                .collect();
 
             let packet = ServerPacket::Snapshot {
                 tick: engine.current_tick().0,
                 entities: entities_view,
             };
-
-            // D. Отправка в сеть
-            // Игнорируем ошибку, если нет слушателей
             let _ = snapshot_tx.send(packet);
 
-            // E. Sleep (Maintain Tick Rate)
+            // Tick rate
             let elapsed = start.elapsed();
             if elapsed < tick_rate {
-                thread::sleep(tick_rate - elapsed);
+                std::thread::sleep(tick_rate - elapsed);
             }
         }
+
+        // Корректное завершение ПОСЛЕ выхода из loop
+        engine.shutdown();
+        info!("Engine thread finished");
     });
 
-    // 3. Запускаем Сеть (IO Bound) в текущем потоке (Tokio Runtime)
-    cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx).await;
+    // --- Сетевой слой ---
+    let net_handle = tokio::spawn(async move {
+        cd_net::run_server(
+            8080,
+            cmd_sender,
+            snapshot_tx_net,
+            telemetry_tx,
+            net_stop_rx,
+        )
+        .await;
+        info!("Network finished");
+    });
+
+    // --- Ожидание сигнала (Ctrl+C или SIGTERM) ---
+    wait_for_shutdown_signal().await;
+    info!("🛑 Shutdown signal received, stopping gracefully...");
+
+    // Останавливаем сначала сеть (перестаём принимать команды)
+    let _ = net_stop_tx.send(());
+
+    // Затем движок (дообрабатывает текущий тик и сохраняет данные)
+    let _ = engine_stop_tx.send(());
+
+    // Ждём завершения обоих
+    net_handle.await.expect("Network task panicked");
+    engine_handle.join().expect("Engine thread panicked");
+
+    info!("✅ Cognitive Dungeon stopped cleanly");
+}
+
+async fn wait_for_shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    // На не-unix платформах SIGTERM не поддерживается — ждём только Ctrl+C
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }

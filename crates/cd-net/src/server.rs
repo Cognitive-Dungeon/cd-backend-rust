@@ -13,7 +13,7 @@ use cd_telemetry::EngineEvent;
 use futures::{sink::SinkExt, stream::StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::broadcast as tbroadcast;
+use tokio::sync::{broadcast as tbroadcast, oneshot};
 use tracing::{error, info, warn};
 
 /// Контекст, доступный всем обработчикам
@@ -29,11 +29,9 @@ pub async fn run_server(
     cmd_tx: CommandSender,
     snapshot_tx: tbroadcast::Sender<ServerPacket>,
     telemetry_tx: tbroadcast::Sender<EngineEvent>,
+    stop_rx: oneshot::Receiver<()>,
 ) {
-    let game_state = Arc::new(AppState {
-        cmd_tx,
-        snapshot_tx,
-    });
+    let game_state = Arc::new(AppState { cmd_tx, snapshot_tx });
     let telemetry_state: TelemetryState = Arc::new(telemetry_tx);
 
     let app = Router::new()
@@ -44,9 +42,16 @@ pub async fn run_server(
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("🌐 Network listening on {}", addr);
-
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+
+    // graceful shutdown: axum ждёт сигнала и закрывает существующие соединения
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move {
+            let _ = stop_rx.await;
+            info!("Network layer shutting down");
+        })
+        .await
+        .unwrap();
 }
 
 /// HTTP Handshake -> WebSocket Upgrade

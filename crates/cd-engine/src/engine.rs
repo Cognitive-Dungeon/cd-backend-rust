@@ -2,7 +2,7 @@ use crate::registry::EntityRegistry;
 use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
-use cd_data::{WorldRepository, EntityRepository};
+use cd_data::{EntityRepository, WorldRepository};
 use cd_ecs::components::{Name, Position, Render, Stats};
 use cd_map::{SpatialGrid, WorldMap};
 use cd_telemetry::{EngineEvent, NullSink, TelemetrySink};
@@ -52,6 +52,41 @@ impl Engine {
             world_repo,
             entity_repo,
         }
+    }
+
+    /// Корректное завершение: сохраняем всё что можно перед выходом.
+    /// Вызывается после последнего тика, до уничтожения Engine.
+    pub fn shutdown(&mut self) {
+        tracing::info!("Engine shutting down at {}", self.current_tick);
+
+        self.flush_dirty_chunks();
+
+        self.telemetry.emit(EngineEvent::ErrorIsolated {
+            tick_id: self.current_tick.0,
+            context: "engine".to_string(),
+            error: "clean shutdown".to_string(),
+        });
+
+        tracing::info!("Engine shutdown complete");
+    }
+
+    /// Сбрасывает изменённые чанки в репозиторий.
+    /// Вызывается при shutdown и опционально каждые N тиков.
+    fn flush_dirty_chunks(&mut self) {
+        let Some(ref repo) = self.world_repo else {
+            tracing::debug!("No world_repo configured, skipping chunk flush");
+            return;
+        };
+
+        // Собираем чанки которые нужно сохранить
+        // Пока сохраняем тестовый чанк (0,0) — в будущем WorldMap будет
+        // отслеживать dirty-флаги через DirtyTracker
+        let chunk_key = cd_core::WorldPos::new(0, 0, 0);
+        let tile = self.map.get_tile(chunk_key);
+
+        // Временно: строим чанк из текущего состояния карты для сохранения
+        // TODO: WorldMap::iter_dirty_chunks() когда добавим dirty tracking
+        tracing::debug!("Chunk flush placeholder — dirty tracking not yet implemented");
     }
 
     /// Создание сущности (Фабрика)
@@ -169,35 +204,37 @@ impl Engine {
     }
 
     /// Загрузить чанк напрямую (например, при генерации мира).
-pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
-    let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
-    self.map.put_chunk(chunk_key, chunk);
-}
+    pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
+        let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
+        self.map.put_chunk(chunk_key, chunk);
+    }
 
-/// Загрузить чанк из репозитория.
-/// Если репозитория нет или чанка нет — тихо пропускает.
-pub fn load_chunk_from_repo(&mut self, chunk_x: i32, chunk_y: i32) {
-    let Some(ref repo) = self.world_repo else { return };
-    let key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
+    /// Загрузить чанк из репозитория.
+    /// Если репозитория нет или чанка нет — тихо пропускает.
+    pub fn load_chunk_from_repo(&mut self, chunk_x: i32, chunk_y: i32) {
+        let Some(ref repo) = self.world_repo else {
+            return;
+        };
+        let key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
 
-    match repo.load_chunk(key) {
-        Ok(Some(chunk)) => {
-            self.map.put_chunk(key, chunk);
-            tracing::info!("Loaded chunk ({}, {}) from repository", chunk_x, chunk_y);
-        }
-        Ok(None) => {
-            tracing::debug!("Chunk ({}, {}) not found in repository", chunk_x, chunk_y);
-        }
-        Err(e) => {
-            tracing::warn!("Failed to load chunk ({}, {}): {}", chunk_x, chunk_y, e);
-            self.telemetry.emit(EngineEvent::ErrorIsolated {
-                tick_id: self.current_tick.0,
-                context: format!("load_chunk_from_repo ({}, {})", chunk_x, chunk_y),
-                error: e.to_string(),
-            });
+        match repo.load_chunk(key) {
+            Ok(Some(chunk)) => {
+                self.map.put_chunk(key, chunk);
+                tracing::info!("Loaded chunk ({}, {}) from repository", chunk_x, chunk_y);
+            }
+            Ok(None) => {
+                tracing::debug!("Chunk ({}, {}) not found in repository", chunk_x, chunk_y);
+            }
+            Err(e) => {
+                tracing::warn!("Failed to load chunk ({}, {}): {}", chunk_x, chunk_y, e);
+                self.telemetry.emit(EngineEvent::ErrorIsolated {
+                    tick_id: self.current_tick.0,
+                    context: format!("load_chunk_from_repo ({}, {})", chunk_x, chunk_y),
+                    error: e.to_string(),
+                });
+            }
         }
     }
-}
 
     pub fn current_tick(&self) -> TickId {
         self.current_tick

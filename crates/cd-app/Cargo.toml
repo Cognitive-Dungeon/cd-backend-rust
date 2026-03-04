@@ -12,7 +12,7 @@ cd-engine = { path = "../cd-engine" }
 cd-net = {path = "../cd-net"}
 cd-data      = { workspace = true }
 cd-data-json = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 hecs = { workspace = true }
