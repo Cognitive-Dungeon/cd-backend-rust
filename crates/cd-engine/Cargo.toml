@@ -10,6 +10,7 @@ cd-ecs = { workspace = true }
 cd-map = { workspace = true }
 hecs = { workspace = true }
 tracing = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

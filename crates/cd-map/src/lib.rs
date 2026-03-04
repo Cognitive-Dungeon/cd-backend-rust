@@ -7,7 +7,7 @@ mod bitmask;
 mod sparse_chunk;
 mod shard;
 
-pub use tile::{Tile, TileFlags};
+pub use tile::{Tile, TileFlags, MaterialID};
 pub use chunk::Chunk;
 pub use sparse_chunk::SparseChunk;
 pub use region::Region;

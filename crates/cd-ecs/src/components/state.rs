@@ -1,4 +1,4 @@
-use cd_core::{ObjectGuid, WorldPos};
+use cd_core::{WorldPos};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(transparent)]

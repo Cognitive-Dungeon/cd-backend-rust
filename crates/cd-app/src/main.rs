@@ -1,17 +1,15 @@
 use cd_core::{ObjectGuid, WorldPos};
 use cd_engine::{Engine, InputCmd};
-use cd_map::{Chunk, MaterialId, Tile, TileFlags};
-use cd_net::{protocol::ServerPacket, protocol::EntityView};
+use cd_map::{Chunk, Tile, TileFlags};
+use cd_net::{protocol::EntityView, protocol::ServerPacket};
 use std::thread;
 use std::time::Duration;
 use tokio::sync::{broadcast, mpsc};
-use tracing::{info, Level};
+use tracing::{Level, info};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("🚀 Booting Cognitive Dungeon...");
 
@@ -30,8 +28,16 @@ async fn main() {
 
         // Setup Map (Test)
         let mut chunk = Chunk::new();
-        chunk.set(5, 5, Tile { material: MaterialId(1), flags: TileFlags::SOLID, variant: 0 });
-        engine.map.insert_chunk(0, 0, chunk);
+        chunk.set_tile(
+            5,
+            5,
+            Tile {
+                material: 1,
+                flags: TileFlags::SOLID,
+                variant: 0,
+            },
+        );
+        engine.load_chunk(0, 0, chunk);
 
         // Spawn Test Player (чтобы было кем управлять)
         // В реальной жизни это должно происходить по команде Login
@@ -59,14 +65,16 @@ async fn main() {
 
             // Запрашиваем данные из ECS для рендера
             // Тут мы нарушаем изоляцию для демо, в проде это будет внутри engine.snapshot()
-            for (id, (pos, render)) in engine.world.query::<(&cd_ecs::components::Position, &cd_ecs::components::Render)>().iter() {
-                // Тут нужен маппинг Entity -> Guid, но пока фейк
+            for snap in engine.snapshot_entities() {
                 entities_view.push(EntityView {
-                    guid: "test-guid".to_string(), // TODO: use real guid
-                    x: pos.0.x(),
-                    y: pos.0.y(),
-                    glyph: render.glyph,
-                    color: format!("#{:06X}", render.color_rgb),
+                    guid: snap
+                        .guid
+                        .map(|g| g.to_string())
+                        .unwrap_or_else(|| "unknown".to_string()),
+                    x: snap.x,
+                    y: snap.y,
+                    glyph: snap.glyph,
+                    color: format!("#{:06X}", snap.color_rgb),
                 });
             }
 

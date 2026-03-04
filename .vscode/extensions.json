@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "lyonsyonii.rust-syntax",
+        "tamasfe.even-better-toml"
+    ]
+}

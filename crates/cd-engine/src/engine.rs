@@ -1,28 +1,23 @@
-use crate::input::InputCmd;
-use crate::systems;
-use cd_core::{ObjectGuid, WorldPos};
-use cd_ecs::components::{Position, Name, Render, Stats};
-use cd_map::{WorldMap, SpatialGrid};
-use hecs::{World, Entity, CommandBuffer};
-use std::collections::HashMap;
-use tracing::{info, warn};
 use crate::registry::EntityRegistry;
+use crate::systems;
+use crate::{EntitySnapshot, input::InputCmd};
+use cd_core::{ObjectGuid, WorldPos};
+use cd_ecs::components::{Name, Position, Render, Stats};
+use cd_map::{SpatialGrid, WorldMap};
+use hecs::{CommandBuffer, World};
+use tracing::{info, warn};
 
 pub struct Engine {
     // ECS
-    pub world: World,
+    world: World,
 
     // Инфраструктура
-    pub map: WorldMap,
-    pub grid: SpatialGrid,
-
-    // Маппинг GUID (наш ID) -> Entity (hecs ID)
-    // Это критически важно для производительности O(1)
-    entity_index: HashMap<ObjectGuid, Entity>,
+    map: WorldMap,
+    grid: SpatialGrid,
 
     // Буфер структурных изменений (Spawn/Despawn)
     cmd_buffer: CommandBuffer,
-    entity_registry: EntityRegistry
+    entity_registry: EntityRegistry,
 }
 
 impl Default for Engine {
@@ -31,7 +26,6 @@ impl Default for Engine {
             world: World::new(),
             map: WorldMap::new(),
             grid: SpatialGrid::new(),
-            entity_index: HashMap::new(),
             cmd_buffer: CommandBuffer::new(),
             entity_registry: EntityRegistry::new(),
         }
@@ -49,10 +43,20 @@ impl Engine {
         let entity = self.world.spawn((
             Position(pos),
             Name(name.clone()),
-            Render { glyph: '@', color_rgb: 0x00FF00 },
-            Stats { hp: 100, max_hp: 100, mana: 100, max_mana: 100 },
+            Render {
+                glyph: '@',
+                color_rgb: 0x00FF00,
+            },
+            Stats {
+                hp: 100,
+                max_hp: 100,
+                mana: 100,
+                max_mana: 100,
+            },
             // Важно: храним GUID внутри компонента тоже, для обратного поиска
-            cd_ecs::components::Controller { agent_id: "player".into() },
+            cd_ecs::components::Controller {
+                agent_id: "player".into(),
+            },
         ));
 
         // 2. Регистрируем в регистрах
@@ -72,7 +76,7 @@ impl Engine {
         // 2. Logic Systems
         // Передаем &mut self.world, чтобы системы могли итерироваться
         // Но для сложных систем нам понадобится Context, пока сделаем просто функцию
-        systems::movement::run_movement(&mut self.world, &self.map, &mut self.grid, &self.entity_index);
+        systems::movement::run_movement(&mut self.world, &self.map, &mut self.grid);
 
         // 3. Apply Structural Changes (если системы просили удалить/создать сущности)
         self.cmd_buffer.run_on(&mut self.world);
@@ -80,15 +84,18 @@ impl Engine {
 
     fn handle_input(&mut self, cmd: InputCmd) {
         match cmd {
-            InputCmd::Move { entity_guid, target } => {
+            InputCmd::Move {
+                entity_guid,
+                target,
+            } => {
                 // Находим hecs::Entity по GUID
-                if let Some(&entity) = self.entity_index.get(&entity_guid) {
+                if let Some(entity) = self.entity_registry.get_entity(entity_guid) {
                     // Добавляем/Обновляем компонент "TargetPosition" или просто телепортируем пока для теста
                     // В реальной игре тут мы бы добавили компонент IntentMove
 
                     // ХАК для теста: просто меняем позицию, если нет стены
                     // В нормальной системе это сделает movement_system
-                    if !self.map.is_solid(target) {
+                    if !self.map.is_solid_fast(target) {
                         // Получаем доступ к позиции
                         if let Ok(mut pos) = self.world.get::<&mut Position>(entity) {
                             let old_pos = pos.0;
@@ -106,5 +113,27 @@ impl Engine {
             }
             _ => {} // Пока игнорируем остальное
         }
+    }
+
+    /// Публичный снапшот для сетевого слоя.
+    pub fn snapshot_entities(&self) -> Vec<EntitySnapshot> {
+        self.world
+            .query::<(&Position, &Render)>()
+            .iter()
+            .map(|(entity, (pos, render))| EntitySnapshot {
+                guid: self.entity_registry.get_guid(entity),
+                x: pos.0.x(),
+                y: pos.0.y(),
+                glyph: render.glyph,
+                color_rgb: render.color_rgb,
+            })
+            .collect()
+    }
+
+    /// Загружает чанк в статический слой карты.
+    /// Принимает chunk-координаты (не тайловые).
+    pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
+        let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
+        self.map.put_chunk(chunk_key, chunk);
     }
 }

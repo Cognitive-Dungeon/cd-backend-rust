@@ -262,15 +262,15 @@ mod tests {
         // 1. Установка нового тайла
         chunk.set_tile(0, 0, t1);
         assert_eq!(chunk.get_tile(0, 0), t1);
-        assert_eq!(chunk.palette.len(), 2); // Void + t1
+        assert_eq!(chunk.palette_len as usize, 2); // Void + t1
 
         // 2. Дедупликация (тот же тайл в другом месте)
         chunk.set_tile(1, 1, t1);
-        assert_eq!(chunk.palette.len(), 2); // Палитра не должна вырасти
+        assert_eq!(chunk.palette_len as usize, 2); // Палитра не должна вырасти
 
         // 3. Другой тайл
         chunk.set_tile(2, 2, t2);
-        assert_eq!(chunk.palette.len(), 3);
+        assert_eq!(chunk.palette_len as usize, 3);
     }
 
     #[test]

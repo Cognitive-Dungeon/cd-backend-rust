@@ -9,7 +9,6 @@ pub fn run_movement(
     world: &mut World,
     _map: &WorldMap,
     _grid: &mut SpatialGrid,
-    _index: &HashMap<ObjectGuid, Entity>
 ) {
     // Пример итерации: Найти всех, у кого есть Имя и Позиция
     for (_id, (name, pos)) in world.query::<(&Name, &Position)>().iter() {
