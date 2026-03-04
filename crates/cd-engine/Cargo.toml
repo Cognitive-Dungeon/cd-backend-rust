@@ -8,9 +8,12 @@ authors.workspace = true
 cd-core = { workspace = true }
 cd-ecs = { workspace = true }
 cd-map = { workspace = true }
+cd-telemetry = { workspace = true }
 hecs = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
+rand_chacha = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

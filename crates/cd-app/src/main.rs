@@ -1,10 +1,10 @@
 use cd_core::{ObjectGuid, WorldPos};
-use cd_engine::{Engine, InputCmd};
+use cd_engine::{BroadcastSink, CommandBus, Engine};
 use cd_map::{Chunk, Tile, TileFlags};
 use cd_net::{protocol::EntityView, protocol::ServerPacket};
 use std::thread;
 use std::time::Duration;
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::broadcast;
 use tracing::{Level, info};
 
 #[tokio::main]
@@ -15,7 +15,8 @@ async fn main() {
 
     // 1. Создаем каналы связи
     // Сеть -> Движок (Команды)
-    let (cmd_tx, mut cmd_rx) = mpsc::channel::<InputCmd>(1024);
+    let (mut cmd_bus, cmd_sender) = CommandBus::new(1024);
+    let (telemetry_sink, telemetry_tx) = BroadcastSink::new(256);
 
     // Движок -> Сеть (Снапшоты)
     // Broadcast канал: один писатель (движок), много читателей (вебсокеты)
@@ -23,8 +24,9 @@ async fn main() {
     let snapshot_tx_net = snapshot_tx.clone();
 
     // 2. Запускаем Движок в отдельном OS потоке (CPU Bound)
+    let telemetry_sink = std::sync::Arc::new(telemetry_sink);
     thread::spawn(move || {
-        let mut engine = Engine::new();
+        let mut engine = Engine::with_telemetry(telemetry_sink);
 
         // Setup Map (Test)
         let mut chunk = Chunk::new();
@@ -45,19 +47,12 @@ async fn main() {
         engine.spawn_player(player_guid, "NetPlayer".to_string(), WorldPos::new(0, 0, 0));
 
         let tick_rate = Duration::from_millis(50); // 20 TPS
-        let mut tick_counter = 0;
 
         loop {
             let start = std::time::Instant::now();
 
-            // A. Читаем все накопленные команды из сети (Non-blocking)
-            let mut inputs = Vec::new();
-            while let Ok(cmd) = cmd_rx.try_recv() {
-                inputs.push(cmd);
-            }
-
-            // B. Тик Симуляции
-            engine.tick(inputs);
+            let commands = cmd_bus.drain_sorted();
+            engine.tick(commands);
 
             // C. Генерация Снапшота (Mock)
             // В реальной системе тут будет engine.create_snapshot()
@@ -79,15 +74,13 @@ async fn main() {
             }
 
             let packet = ServerPacket::Snapshot {
-                tick: tick_counter,
+                tick: engine.current_tick().0,
                 entities: entities_view,
             };
 
             // D. Отправка в сеть
             // Игнорируем ошибку, если нет слушателей
             let _ = snapshot_tx.send(packet);
-
-            tick_counter += 1;
 
             // E. Sleep (Maintain Tick Rate)
             let elapsed = start.elapsed();
@@ -98,5 +91,5 @@ async fn main() {
     });
 
     // 3. Запускаем Сеть (IO Bound) в текущем потоке (Tokio Runtime)
-    cd_net::run_server(8080, cmd_tx, snapshot_tx_net).await;
+    cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx).await;
 }

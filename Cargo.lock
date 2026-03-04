@@ -273,8 +273,11 @@ dependencies = [
  "cd-core",
  "cd-ecs",
  "cd-map",
+ "cd-telemetry",
  "hecs",
+ "rand_chacha 0.10.0",
  "thiserror 2.0.18",
+ "tokio",
  "tracing",
 ]
 
@@ -298,7 +301,19 @@ dependencies = [
  "axum",
  "cd-core",
  "cd-engine",
+ "cd-telemetry",
  "futures",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "cd-telemetry"
+version = "0.1.0"
+dependencies = [
+ "cd-core",
  "serde",
  "serde_json",
  "tokio",
@@ -1001,6 +1016,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_chacha"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e6af7f3e25ded52c41df4e0b1af2d047e45896c2f3281792ed68a1c243daedb"
+dependencies = [
+ "ppv-lite86",
+ "rand_core 0.10.0",
+]
+
+[[package]]
 name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1017,6 +1042,12 @@ checksum = "76afc826de14238e6e8c374ddcc1fa19e374fd8dd986b0d2af0d02377261d83c"
 dependencies = [
  "getrandom 0.3.4",
 ]
+
+[[package]]
+name = "rand_core"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c8d0fd677905edcbeedbf2edb6494d676f0e98d54d5cf9bda0b061cb8fb8aba"
 
 [[package]]
 name = "rayon"

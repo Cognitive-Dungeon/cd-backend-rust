@@ -6,7 +6,8 @@ authors.workspace = true
 
 [dependencies]
 cd-core = { workspace = true }
-cd-engine = { workspace = true } # Нужен только для InputCmd (enum)
+cd-engine = { workspace = true }
+cd-telemetry = { workspace = true }
 tokio = { workspace = true }
 axum = { version = "0.7", features = ["ws"] } # Web framework + WebSockets
 serde = { workspace = true }

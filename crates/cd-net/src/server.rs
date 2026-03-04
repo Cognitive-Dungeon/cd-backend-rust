@@ -1,40 +1,46 @@
 use crate::protocol::{ClientPacket, ServerPacket};
+use crate::telemetry::{TelemetryState, telemetry_ws_handler};
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    Router,
     extract::State,
+    extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
     routing::get,
-    Router,
 };
 use cd_core::{ObjectGuid, WorldPos};
-use cd_engine::InputCmd;
+use cd_engine::{CommandSender, InputCmd};
+use cd_telemetry::EngineEvent;
 use futures::{sink::SinkExt, stream::StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::broadcast as tbroadcast;
 use tracing::{error, info, warn};
 
 /// Контекст, доступный всем обработчикам
 struct AppState {
     /// Канал для отправки команд в Движок
-    cmd_tx: mpsc::Sender<InputCmd>,
+    cmd_tx: CommandSender,
     /// Канал для получения обновлений мира (подписка)
-    snapshot_tx: broadcast::Sender<ServerPacket>,
+    snapshot_tx: tbroadcast::Sender<ServerPacket>,
 }
 
 pub async fn run_server(
     port: u16,
-    cmd_tx: mpsc::Sender<InputCmd>,
-    snapshot_tx: broadcast::Sender<ServerPacket>,
+    cmd_tx: CommandSender,
+    snapshot_tx: tbroadcast::Sender<ServerPacket>,
+    telemetry_tx: tbroadcast::Sender<EngineEvent>,
 ) {
-    let state = Arc::new(AppState {
+    let game_state = Arc::new(AppState {
         cmd_tx,
         snapshot_tx,
     });
+    let telemetry_state: TelemetryState = Arc::new(telemetry_tx);
 
     let app = Router::new()
         .route("/ws", get(ws_handler))
-        .with_state(state);
+        .with_state(game_state)
+        .route("/telemetry", get(telemetry_ws_handler))
+        .with_state(telemetry_state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("🌐 Network listening on {}", addr);
@@ -44,10 +50,7 @@ pub async fn run_server(
 }
 
 /// HTTP Handshake -> WebSocket Upgrade
-async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
+async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
     ws.on_upgrade(|socket| handle_socket(socket, state))
 }
 

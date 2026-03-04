@@ -1,10 +1,12 @@
 use crate::registry::EntityRegistry;
-use crate::systems;
 use crate::{EntitySnapshot, input::InputCmd};
+use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
 use cd_ecs::components::{Name, Position, Render, Stats};
 use cd_map::{SpatialGrid, WorldMap};
+use cd_telemetry::{EngineEvent, NullSink, TelemetrySink};
 use hecs::{CommandBuffer, World};
+use std::sync::Arc;
 use tracing::{info, warn};
 
 pub struct Engine {
@@ -18,6 +20,13 @@ pub struct Engine {
     // Буфер структурных изменений (Spawn/Despawn)
     cmd_buffer: CommandBuffer,
     entity_registry: EntityRegistry,
+
+    /// Seed для воспроизводимого RNG (задаётся при создании)
+    world_seed: u64,
+    /// Текущий тик (монотонно растёт)
+    current_tick: TickId,
+
+    telemetry: Arc<dyn TelemetrySink>,
 }
 
 impl Default for Engine {
@@ -28,6 +37,9 @@ impl Default for Engine {
             grid: SpatialGrid::new(),
             cmd_buffer: CommandBuffer::new(),
             entity_registry: EntityRegistry::new(),
+            world_seed: 0xDEAD_CAFE_BABE_1337,
+            current_tick: TickId::default(),
+            telemetry: Arc::new(NullSink),
         }
     }
 }
@@ -35,6 +47,13 @@ impl Default for Engine {
 impl Engine {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_telemetry(sink: Arc<dyn TelemetrySink>) -> Self {
+        Self {
+            telemetry: sink,
+            ..Self::default()
+        }
     }
 
     /// Создание сущности (Фабрика)
@@ -64,13 +83,25 @@ impl Engine {
         self.grid.insert(guid, pos);
 
         info!("Spawned [{}] {} at {:?}", guid, name, pos);
+        self.telemetry.emit(EngineEvent::EntitySpawned {
+            tick_id: self.current_tick.0,
+            guid: guid.to_string(),
+            x: pos.x(),
+            y: pos.y(),
+        });
     }
 
     /// Главный цикл симуляции (Tick)
-    pub fn tick(&mut self, inputs: Vec<InputCmd>) {
-        // 1. Process Input (Cmd -> Component State/Intent)
-        for cmd in inputs {
-            self.handle_input(cmd);
+    pub fn tick(&mut self, commands: Vec<StampedCommand>) {
+        let start = std::time::Instant::now();
+        let tick_id = self.current_tick.0;
+        let command_count = commands.len() as u32;
+
+        // Создаём детерминированный контекст для этого тика
+        let _ctx = TickContext::new(self.world_seed, self.current_tick);
+
+        for stamped in commands {
+            self.handle_input(stamped.payload);
         }
 
         // 2. Logic Systems
@@ -80,6 +111,15 @@ impl Engine {
 
         // 3. Apply Structural Changes (если системы просили удалить/создать сущности)
         self.cmd_buffer.run_on(&mut self.world);
+
+        self.telemetry.emit(EngineEvent::TickCompleted {
+            tick_id,
+            duration_us: start.elapsed().as_micros() as u64,
+            entity_count: self.world.len() as u32,
+            command_count,
+        });
+
+        self.current_tick = self.current_tick.next();
     }
 
     fn handle_input(&mut self, cmd: InputCmd) {
@@ -135,5 +175,9 @@ impl Engine {
     pub fn load_chunk(&mut self, chunk_x: i32, chunk_y: i32, chunk: cd_map::Chunk) {
         let chunk_key = cd_core::WorldPos::new(chunk_x, chunk_y, 0);
         self.map.put_chunk(chunk_key, chunk);
+    }
+
+    pub fn current_tick(&self) -> TickId {
+        self.current_tick
     }
 }

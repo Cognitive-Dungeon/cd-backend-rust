@@ -43,6 +43,7 @@ cd-ecs = { path = "crates/cd-ecs" }
 cd-engine = { path = "crates/cd-engine" }
 cd-map = { path = "crates/cd-map" }
 cd-net = { path = "crates/cd-net" }
+cd-telemetry ={ path = "crates/cd-telemetry"}
 
 # runtime
 tokio = { version = "1.49.0", default-features = false, features = [
@@ -68,6 +69,7 @@ hecs = "0.10.5"
 
 # math
 glam = "0.31.0"
+rand_chacha = "0.10"
 
 # ---------------- LINTS ----------------
 
