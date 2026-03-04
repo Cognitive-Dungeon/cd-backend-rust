@@ -1,6 +1,6 @@
-use cd_core::{ObjectGuid, WorldPos};
-use ahash::HashMap;
 use crate::CELL_SIZE;
+use ahash::HashMap;
+use cd_core::{ObjectGuid, WorldPos};
 
 /// Пространственный индекс.
 /// Позволяет быстро отвечать на вопрос "кто находится в точке X,Y?".
@@ -50,5 +50,23 @@ impl SpatialGrid {
     pub fn query_bucket(&self, pos: WorldPos) -> &[ObjectGuid] {
         let key = Self::get_key(pos);
         self.buckets.get(&key).map(|v| v.as_slice()).unwrap_or(&[])
+    }
+
+    /// Возвращает все сущности в квадрате вокруг точки (bucket-level, не точный радиус).
+    /// Достаточно для AoE-эффектов и ИИ-восприятия.
+    pub fn query_radius(&self, center: WorldPos, radius: i32) -> Vec<ObjectGuid> {
+        let center_key = Self::get_key(center);
+        let bucket_radius = (radius / CELL_SIZE) + 1;
+        let mut result = Vec::new();
+
+        for dy in -bucket_radius..=bucket_radius {
+            for dx in -bucket_radius..=bucket_radius {
+                let key = (center_key.0 + dx, center_key.1 + dy);
+                if let Some(entities) = self.buckets.get(&key) {
+                    result.extend_from_slice(entities);
+                }
+            }
+        }
+        result
     }
 }

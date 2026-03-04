@@ -6,12 +6,18 @@ pub mod command_bus;
 pub mod tick;
 mod registry;
 pub mod builder;
+pub mod game_error;
+pub mod game_world;
+pub mod system_runner;
 
 pub use engine::Engine;
 pub use input::InputCmd;
 pub use command_bus::{CommandBus, CommandSender, StampedCommand};
 pub use tick::{TickId, TickContext};
 pub use cd_telemetry::{TelemetrySink, NullSink, BroadcastSink, EngineEvent};
+pub use game_error::{GameError, DamageResult};
+pub use game_world::GameWorld;
+pub use system_runner::SystemRunner;
 
 pub use builder::EngineBuilder;
 

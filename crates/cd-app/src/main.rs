@@ -1,20 +1,18 @@
 // ПОЛНЫЙ ФАЙЛ:
 
+use cd_core::{ObjectGuid, WorldPos};
 use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
-use cd_core::{ObjectGuid, WorldPos};
 use cd_net::protocol::{EntityView, ServerPacket};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
-use tracing::{error, info, Level};
+use tracing::{Level, error, info};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("🚀 Booting Cognitive Dungeon...");
 
@@ -27,12 +25,10 @@ async fn main() {
     let telemetry_sink = Arc::new(telemetry_sink);
 
     // --- Репозитории ---
-    let world_repo = Arc::new(
-        JsonWorldRepository::new("./data").expect("Failed to init world repository"),
-    );
-    let entity_repo = Arc::new(
-        JsonEntityRepository::new("./data").expect("Failed to init entity repository"),
-    );
+    let world_repo =
+        Arc::new(JsonWorldRepository::new("./data").expect("Failed to init world repository"));
+    let entity_repo =
+        Arc::new(JsonEntityRepository::new("./data").expect("Failed to init entity repository"));
 
     // --- Сигнал остановки ---
     // Используем пару каналов: main -> engine_thread и main -> net
@@ -48,9 +44,20 @@ async fn main() {
             .world_seed(0xDEAD_CAFE_BABE_1337)
             .build();
 
+        engine.register_system("movement", cd_engine::systems::movement::run);
+        
+
         // Setup начального состояния мира
         let mut chunk = Chunk::new();
-        chunk.set_tile(5, 5, Tile { material: 1, flags: TileFlags::SOLID, variant: 0 });
+        chunk.set_tile(
+            5,
+            5,
+            Tile {
+                material: 1,
+                flags: TileFlags::SOLID,
+                variant: 0,
+            },
+        );
         engine.load_chunk(0, 0, chunk);
 
         let player_guid = ObjectGuid::new(1, 1, 1, 4);
@@ -113,14 +120,7 @@ async fn main() {
 
     // --- Сетевой слой ---
     let net_handle = tokio::spawn(async move {
-        cd_net::run_server(
-            8080,
-            cmd_sender,
-            snapshot_tx_net,
-            telemetry_tx,
-            net_stop_rx,
-        )
-        .await;
+        cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx, net_stop_rx).await;
         info!("Network finished");
     });
 

@@ -1,4 +1,6 @@
+use crate::game_world::GameWorld;
 use crate::registry::EntityRegistry;
+use crate::system_runner::SystemRunner;
 use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
@@ -30,6 +32,7 @@ pub struct Engine {
     telemetry: Arc<dyn TelemetrySink>,
     world_repo: Option<Arc<dyn WorldRepository>>,
     entity_repo: Option<Arc<dyn EntityRepository>>,
+    system_runner: SystemRunner,
 }
 
 impl Engine {
@@ -51,6 +54,7 @@ impl Engine {
             telemetry,
             world_repo,
             entity_repo,
+            system_runner: SystemRunner::new(),
         }
     }
 
@@ -87,6 +91,17 @@ impl Engine {
         // Временно: строим чанк из текущего состояния карты для сохранения
         // TODO: WorldMap::iter_dirty_chunks() когда добавим dirty tracking
         tracing::debug!("Chunk flush placeholder — dirty tracking not yet implemented");
+    }
+
+    /// Зарегистрировать систему. Системы выполняются в порядке регистрации.
+    pub fn register_system(
+        &mut self,
+        name: &'static str,
+        f: impl Fn(&mut GameWorld, &mut TickContext) -> Result<(), crate::game_error::GameError>
+        + Send
+        + 'static,
+    ) {
+        self.system_runner.register(name, f);
     }
 
     /// Создание сущности (Фабрика)
@@ -130,19 +145,32 @@ impl Engine {
         let tick_id = self.current_tick.0;
         let command_count = commands.len() as u32;
 
-        // Создаём детерминированный контекст для этого тика
-        let _ctx = TickContext::new(self.world_seed, self.current_tick);
+        let mut ctx = TickContext::new(self.world_seed, self.current_tick);
 
+        // Входящие команды
         for stamped in commands {
             self.handle_input(stamped.payload);
         }
 
-        // 2. Logic Systems
-        // Передаем &mut self.world, чтобы системы могли итерироваться
-        // Но для сложных систем нам понадобится Context, пока сделаем просто функцию
-        systems::movement::run_movement(&mut self.world, &self.map, &mut self.grid);
+        // Берём runner из self чтобы обойти borrow checker
+        // (runner нужен &mut self.world, &mut self.map и т.д. одновременно)
+        let mut runner: SystemRunner = std::mem::take(&mut self.system_runner);
 
-        // 3. Apply Structural Changes (если системы просили удалить/создать сущности)
+        {
+            let mut gw = GameWorld {
+                world: &mut self.world,
+                map: &mut self.map,
+                grid: &mut self.grid,
+                registry: &mut self.entity_registry,
+                commands: &mut self.cmd_buffer,
+                telemetry: self.telemetry.as_ref(),
+            };
+            runner.run(&mut gw, &mut ctx, self.telemetry.as_ref());
+        }
+
+        self.system_runner = runner;
+
+        // Применяем отложенные spawn/despawn
         self.cmd_buffer.run_on(&mut self.world);
 
         self.telemetry.emit(EngineEvent::TickCompleted {
