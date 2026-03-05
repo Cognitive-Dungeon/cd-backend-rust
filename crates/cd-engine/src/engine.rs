@@ -5,11 +5,12 @@ use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::{EntityRepository, WorldRepository};
+use cd_depot::{Depot};
 use cd_ecs::components::{Name, Position, Render, Stats};
 use cd_map::{SpatialGrid, WorldMap};
 use cd_telemetry::{EngineEvent, NullSink, TelemetrySink};
 use hecs::{CommandBuffer, World};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
 
 pub struct Engine {
@@ -33,6 +34,8 @@ pub struct Engine {
     world_repo: Option<Arc<dyn WorldRepository>>,
     entity_repo: Option<Arc<dyn EntityRepository>>,
     system_runner: SystemRunner,
+    /// Игровые данные из Depot. RwLock — движок пишет при reload, системы читают.
+    game_data: Arc<RwLock<Option<Depot>>>,
 }
 
 impl Engine {
@@ -55,6 +58,7 @@ impl Engine {
             world_repo,
             entity_repo,
             system_runner: SystemRunner::new(),
+            game_data: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -91,6 +95,36 @@ impl Engine {
         // Временно: строим чанк из текущего состояния карты для сохранения
         // TODO: WorldMap::iter_dirty_chunks() когда добавим dirty tracking
         tracing::debug!("Chunk flush placeholder — dirty tracking not yet implemented");
+    }
+
+    /// Клонируемый handle на Depot — для передачи в file watcher и API.
+    pub fn game_data_handle(&self) -> Arc<RwLock<Option<Depot>>> {
+        Arc::clone(&self.game_data)
+    }
+
+    /// Перезагрузить данные из файла (вызывается file watcher'ом или VS Code).
+    pub fn reload_game_data(&self, path: &std::path::Path) {
+        match cd_depot::Depot::load(path) {
+            Ok(depot) => {
+                *self.game_data.write().unwrap() = Some(depot);
+                tracing::info!("Depot reloaded from {:?}", path);
+                self.telemetry
+                    .emit(cd_telemetry::EngineEvent::ErrorIsolated {
+                        tick_id: self.current_tick.0,
+                        context: "depot_reload".to_string(),
+                        error: format!("Depot reloaded from {:?}", path),
+                    });
+            }
+            Err(e) => {
+                tracing::error!("Failed to reload depot: {}", e);
+                self.telemetry
+                    .emit(cd_telemetry::EngineEvent::ErrorIsolated {
+                        tick_id: self.current_tick.0,
+                        context: "depot_reload".to_string(),
+                        error: e.to_string(),
+                    });
+            }
+        }
     }
 
     /// Зарегистрировать систему. Системы выполняются в порядке регистрации.
@@ -164,6 +198,7 @@ impl Engine {
                 registry: &mut self.entity_registry,
                 commands: &mut self.cmd_buffer,
                 telemetry: self.telemetry.as_ref(),
+                game_data: Arc::clone(&self.game_data),
             };
             runner.run(&mut gw, &mut ctx, self.telemetry.as_ref());
         }

@@ -1,4 +1,4 @@
-use crate::api::{SharedApiState, handler_get_state};
+use crate::api::{ReloadCallback, SharedApiState, handler_get_state, handler_reload_data};
 use crate::protocol::{ClientPacket, ServerPacket};
 use crate::telemetry::{TelemetryState, telemetry_ws_handler};
 use axum::{
@@ -7,6 +7,7 @@ use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
     routing::get,
+    routing::post,
 };
 use cd_core::{ObjectGuid, WorldPos};
 use cd_engine::{CommandSender, InputCmd};
@@ -32,25 +33,34 @@ pub async fn run_server(
     telemetry_tx: tbroadcast::Sender<EngineEvent>,
     stop_rx: oneshot::Receiver<()>,
     api_state: SharedApiState,
+    reload_cb: ReloadCallback,
 ) {
-    let game_state = Arc::new(AppState { cmd_tx, snapshot_tx });
+    let game_state = Arc::new(AppState {
+        cmd_tx,
+        snapshot_tx,
+    });
     let telemetry_state: TelemetryState = Arc::new(telemetry_tx);
 
     let app = Router::new()
         .merge(
             Router::new()
                 .route("/ws", get(ws_handler))
-                .with_state(game_state)
+                .with_state(game_state),
         )
         .merge(
             Router::new()
                 .route("/telemetry", get(telemetry_ws_handler))
-                .with_state(telemetry_state)
+                .with_state(telemetry_state),
         )
         .merge(
             Router::new()
                 .route("/api/state", get(handler_get_state))
-                .with_state(api_state)
+                .with_state(api_state),
+        )
+        .merge(
+            Router::new()
+                .route("/api/reload-data", post(handler_reload_data))
+                .with_state(reload_cb),
         );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));

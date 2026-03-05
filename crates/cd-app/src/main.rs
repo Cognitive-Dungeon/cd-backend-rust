@@ -2,13 +2,16 @@
 
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
+use cd_engine::watcher::spawn_depot_watcher;
 use cd_engine::{BroadcastSink, CommandBus, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
+use cd_net::ReloadCallback;
 use cd_net::protocol::{EntityView, ServerPacket};
 use cd_net::{ApiEntity, ApiState, SharedApiState};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
+use tokio::sync::Mutex as TokioMutex;
 use tokio::sync::broadcast;
 use tracing::{Level, error, info};
 
@@ -32,6 +35,22 @@ async fn main() {
     let entity_repo =
         Arc::new(JsonEntityRepository::new("./data").expect("Failed to init entity repository"));
 
+    let game_data: Arc<std::sync::RwLock<Option<cd_depot::Depot>>> =
+        Arc::new(std::sync::RwLock::new(None));
+    let game_data_engine  = game_data.clone(); // для треда
+    let game_data_api     = game_data.clone(); // для reload callback
+
+    let depot_path_api = std::path::PathBuf::from("./data/game.cdb");
+    let reload_cb: cd_net::ReloadCallback = Arc::new(tokio::sync::Mutex::new(
+        Box::new(move || {
+            match cd_depot::Depot::load(&depot_path_api) {
+                Ok(depot) => *game_data_api.write().unwrap() = Some(depot),
+                Err(e)    => tracing::error!("API reload failed: {}", e),
+            }
+        })
+    ));
+    let reload_cb_net = reload_cb.clone();
+    
     // --- Сигнал остановки ---
     // Используем пару каналов: main -> engine_thread и main -> net
     let (engine_stop_tx, engine_stop_rx) = tokio::sync::oneshot::channel::<()>();
@@ -49,6 +68,26 @@ async fn main() {
             .entity_repo(entity_repo)
             .world_seed(0xDEAD_CAFE_BABE_1337)
             .build();
+
+        // Путь к .cdb файлу (можно вынести в config)
+        let depot_path = std::path::PathBuf::from("./data/game.cdb");
+        if depot_path.exists() {
+            match cd_depot::Depot::load(&depot_path) {
+                Ok(depot) => *game_data_engine.write().unwrap() = Some(depot),
+                Err(e)    => tracing::error!("Failed to load depot: {}", e),
+            }
+        }
+
+        let game_data_watcher = game_data_engine.clone();
+        let _watcher = cd_engine::watcher::spawn_depot_watcher(
+            depot_path.clone(),
+            move |path| {
+                match cd_depot::Depot::load(path) {
+                    Ok(depot) => *game_data_watcher.write().unwrap() = Some(depot),
+                    Err(e)    => tracing::error!("Hot reload failed: {}", e),
+                }
+            },
+        );
 
         engine.register_system("movement", cd_engine::systems::movement::run);
 
@@ -104,7 +143,7 @@ async fn main() {
                     color: format!("#{:06X}", snap.color_rgb),
                 })
                 .collect();
-            
+
             let snapshots = engine.snapshot_entities();
             if let Ok(mut state) = api_state_engine.lock() {
                 state.tick = engine.current_tick().0;
@@ -141,7 +180,16 @@ async fn main() {
 
     // --- Сетевой слой ---
     let net_handle = tokio::spawn(async move {
-        cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx, net_stop_rx, api_state_net).await;
+        cd_net::run_server(
+            8080,
+            cmd_sender,
+            snapshot_tx_net,
+            telemetry_tx,
+            net_stop_rx,
+            api_state_net,
+            reload_cb_net,
+        )
+        .await;
         info!("Network finished");
     });
 

@@ -10,6 +10,8 @@ cd-ecs = { workspace = true }
 cd-map = { workspace = true }
 cd-telemetry = { workspace = true }
 cd-data = { workspace = true }
+cd-depot = { workspace = true }
+notify   = { workspace = true }
 hecs = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }

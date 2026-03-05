@@ -9,6 +9,7 @@ pub mod builder;
 pub mod game_error;
 pub mod game_world;
 pub mod system_runner;
+pub mod watcher;
 
 pub use engine::Engine;
 pub use input::InputCmd;
@@ -18,6 +19,7 @@ pub use cd_telemetry::{TelemetrySink, NullSink, BroadcastSink, EngineEvent};
 pub use game_error::{GameError, DamageResult};
 pub use game_world::GameWorld;
 pub use system_runner::SystemRunner;
+pub use cd_depot::{Depot, FromDepotLine};
 
 pub use builder::EngineBuilder;
 

@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use cd_core::{ObjectGuid, WorldPos};
 use cd_ecs::components::{Position, Stats};
 use cd_map::{SpatialGrid, Tile, WorldMap};
@@ -22,16 +24,16 @@ use crate::registry::EntityRegistry;
 /// }
 /// ```
 pub struct GameWorld<'a> {
-    pub(crate) world:    &'a mut World,
-    pub(crate) map:      &'a mut WorldMap,
-    pub(crate) grid:     &'a mut SpatialGrid,
+    pub(crate) world: &'a mut World,
+    pub(crate) map: &'a mut WorldMap,
+    pub(crate) grid: &'a mut SpatialGrid,
     pub(crate) registry: &'a mut EntityRegistry,
     pub(crate) commands: &'a mut CommandBuffer,
     pub(crate) telemetry: &'a dyn TelemetrySink,
+    pub(crate) game_data: Arc<RwLock<Option<cd_depot::Depot>>>,
 }
 
 impl<'a> GameWorld<'a> {
-
     // ------------------------------------------------------------------ Map
 
     /// Получить тайл в мировых координатах.
@@ -64,7 +66,10 @@ impl<'a> GameWorld<'a> {
         self.world
             .get::<&Position>(entity)
             .map(|p| p.0)
-            .map_err(|_| GameError::MissingComponent { guid, component: "Position" })
+            .map_err(|_| GameError::MissingComponent {
+                guid,
+                component: "Position",
+            })
     }
 
     /// Доступ к произвольному компоненту на чтение.
@@ -83,7 +88,10 @@ impl<'a> GameWorld<'a> {
     }
 
     /// Доступ к произвольному компоненту на запись.
-    pub fn get_mut<C: hecs::Component>(&self, guid: ObjectGuid) -> Result<hecs::RefMut<'_, C>, GameError> {
+    pub fn get_mut<C: hecs::Component>(
+        &self,
+        guid: ObjectGuid,
+    ) -> Result<hecs::RefMut<'_, C>, GameError> {
         let entity = self.entity(guid)?;
         self.world
             .get::<&mut C>(entity)
@@ -103,9 +111,12 @@ impl<'a> GameWorld<'a> {
 
         let entity = self.entity(guid)?;
         let old_pos = {
-            let mut pos = self.world
-                .get::<&mut Position>(entity)
-                .map_err(|_| GameError::MissingComponent { guid, component: "Position" })?;
+            let mut pos = self.world.get::<&mut Position>(entity).map_err(|_| {
+                GameError::MissingComponent {
+                    guid,
+                    component: "Position",
+                }
+            })?;
             let old = pos.0;
             pos.0 = target;
             old
@@ -118,13 +129,21 @@ impl<'a> GameWorld<'a> {
     // -------------------------------------------------------------- Combat
 
     /// Нанести урон. Если HP ≤ 0 — сущность помечается на удаление.
-    pub fn deal_damage(&mut self, target: ObjectGuid, amount: i32) -> Result<DamageResult, GameError> {
+    pub fn deal_damage(
+        &mut self,
+        target: ObjectGuid,
+        amount: i32,
+    ) -> Result<DamageResult, GameError> {
         let entity = self.entity(target)?;
 
         let (actual_damage, killed) = {
-            let mut stats = self.world
-                .get::<&mut Stats>(entity)
-                .map_err(|_| GameError::MissingComponent { guid: target, component: "Stats" })?;
+            let mut stats =
+                self.world
+                    .get::<&mut Stats>(entity)
+                    .map_err(|_| GameError::MissingComponent {
+                        guid: target,
+                        component: "Stats",
+                    })?;
 
             let actual = amount.min(stats.hp);
             stats.hp -= actual;
@@ -135,7 +154,10 @@ impl<'a> GameWorld<'a> {
             self.commands.despawn(entity);
         }
 
-        Ok(DamageResult { actual_damage, killed })
+        Ok(DamageResult {
+            actual_damage,
+            killed,
+        })
     }
 
     // ------------------------------------------------------------ Lifecycle
@@ -144,7 +166,8 @@ impl<'a> GameWorld<'a> {
     pub fn despawn(&mut self, guid: ObjectGuid) -> Result<(), GameError> {
         let entity = self.entity(guid)?;
         self.registry.unregister(guid);
-        self.grid.remove(guid, self.position(guid).unwrap_or(WorldPos::new(0, 0, 0)));
+        self.grid
+            .remove(guid, self.position(guid).unwrap_or(WorldPos::new(0, 0, 0)));
         self.commands.despawn(entity);
         Ok(())
     }
@@ -167,5 +190,13 @@ impl<'a> GameWorld<'a> {
         self.registry
             .get_entity(guid)
             .ok_or(GameError::EntityNotFound(guid))
+    }
+
+    /// Доступ к игровым данным из Depot (read-only).
+    /// ```rust
+    /// let mat = world.depot().materials.get("stone").cloned();
+    /// ```
+    pub fn depot(&self) -> std::sync::RwLockReadGuard<'_, Option<cd_depot::Depot>> {
+        self.game_data.read().unwrap()
     }
 }

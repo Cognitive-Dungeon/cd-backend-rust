@@ -1,6 +1,7 @@
 use axum::{extract::State, Json};
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
+use tokio::sync::Mutex as TokioMutex;
 
 /// Текущий снапшот состояния движка для внешних инструментов.
 /// Обновляется engine thread после каждого тика.
@@ -23,10 +24,20 @@ pub struct ApiEntity {
 /// Arc<Mutex<...>> — shared между engine thread (запись) и HTTP handler (чтение).
 pub type SharedApiState = Arc<Mutex<ApiState>>;
 
+/// Callback для перезагрузки — движок регистрирует его при старте.
+pub type ReloadCallback = Arc<TokioMutex<Box<dyn Fn() + Send + 'static>>>;
+
 /// GET /api/state — отдаёт текущий снапшот движка.
 pub async fn handler_get_state(
     State(state): State<SharedApiState>,
 ) -> Json<ApiState> {
     let s = state.lock().unwrap_or_else(|e| e.into_inner());
     Json(s.clone())
+}
+
+pub async fn handler_reload_data(
+    State(cb): State<ReloadCallback>,
+) -> axum::http::StatusCode {
+    (cb.lock().await)();
+    axum::http::StatusCode::OK
 }

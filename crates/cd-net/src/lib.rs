@@ -4,4 +4,4 @@ pub mod telemetry;
 pub mod api;
 
 pub use server::run_server;
-pub use api::{ApiState, ApiEntity, SharedApiState};
+pub use api::{ApiState, ApiEntity, SharedApiState, ReloadCallback};
