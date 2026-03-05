@@ -9,14 +9,15 @@ cd-core = { workspace = true }
 cd-ecs = { path = "../cd-ecs" }
 cd-map = { path = "../cd-map" }
 cd-engine = { path = "../cd-engine" }
-cd-net = {path = "../cd-net"}
-cd-data      = { workspace = true }
+cd-net = { path = "../cd-net" }
+cd-data = { workspace = true }
 cd-data-json = { workspace = true }
-cd-depot ={ workspace = true }
+cd-depot = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 hecs = { workspace = true }
+anyhow = { workspace = true }
 
 [lints]
 workspace = true

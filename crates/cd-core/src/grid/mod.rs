@@ -39,15 +39,33 @@ impl Direction {
     }
 
     /// Список ортогональных соседей (4-way).
-    pub const ORTHOGONAL: [Direction; 4] = [
-        Self::North, Self::South, Self::West, Self::East
-    ];
+    pub const ORTHOGONAL: [Direction; 4] = [Self::North, Self::South, Self::West, Self::East];
 
     /// Список всех 2D соседей (8-way).
     pub const ALL_2D: [Direction; 8] = [
-        Self::North, Self::South, Self::West, Self::East,
-        Self::NorthWest, Self::NorthEast, Self::SouthWest, Self::SouthEast
+        Self::North,
+        Self::South,
+        Self::West,
+        Self::East,
+        Self::NorthWest,
+        Self::NorthEast,
+        Self::SouthWest,
+        Self::SouthEast,
     ];
+
+    /// Конвертировать направление в TilePos-смещение для локальной математики.
+    ///
+    /// Позволяет использовать Direction в pathfinding и LOS без ручного маппинга:
+    /// ```rust
+    /// use cd_core::{Direction, TilePos};
+    /// let pos = TilePos::new(0, 0);
+    /// let neighbor = pos + Direction::North.to_tile_pos();
+    /// assert_eq!(neighbor, TilePos::new(0, -1));
+    /// ```
+    pub fn to_tile_pos(self) -> crate::TilePos {
+        let (dx, dy, _) = self.offset();
+        crate::TilePos::new(dx, dy)
+    }
 }
 
 /// Трейт для геометрических операций.
@@ -79,3 +97,8 @@ impl GridLogic for WorldPos {
         self.distance_squared(center) <= (radius as i64 * radius as i64)
     }
 }
+
+pub mod line;
+pub mod neighbors;
+pub mod rect;
+pub mod shapes;

@@ -1,6 +1,8 @@
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
 use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
+
+use crate::TilePos;
 
 /// Упакованная координата (X, Y, Z).
 /// Layout: [ Z (12) | Y (26) | X (26) ]
@@ -91,6 +93,12 @@ impl WorldPos {
         let (cx, cy, _) = self.xyz();
         ((cx ^ cy) as usize) & SHARD_MASK
     }
+
+    /// Глобальный WorldPos → локальные координаты относительно origin чанка.
+    #[inline]
+    pub fn to_tile_pos(self, chunk_origin: WorldPos) -> TilePos {
+        TilePos::new(self.x() - chunk_origin.x(), self.y() - chunk_origin.y())
+    }
 }
 
 impl fmt::Debug for WorldPos {
@@ -123,7 +131,11 @@ impl<'de> Deserialize<'de> for WorldPos {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
-        struct PosDto { x: i32, y: i32, z: i32 }
+        struct PosDto {
+            x: i32,
+            y: i32,
+            z: i32,
+        }
 
         let dto = PosDto::deserialize(deserializer)?;
         Ok(WorldPos::new(dto.x, dto.y, dto.z))

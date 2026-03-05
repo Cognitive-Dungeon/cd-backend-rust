@@ -1,8 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/*"
-]
+members = ["crates/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -43,8 +41,8 @@ cd-ecs = { path = "crates/cd-ecs" }
 cd-engine = { path = "crates/cd-engine" }
 cd-map = { path = "crates/cd-map" }
 cd-net = { path = "crates/cd-net" }
-cd-telemetry ={ path = "crates/cd-telemetry"}
-cd-data     = { path = "crates/cd-data" }
+cd-telemetry = { path = "crates/cd-telemetry" }
+cd-data = { path = "crates/cd-data" }
 cd-data-json = { path = "crates/cd-data-json" }
 cd-depot = { path = "crates/cd-depot" }
 
@@ -54,15 +52,18 @@ tokio = { version = "1.49.0", default-features = false, features = [
     "macros",
     "sync",
     "time",
-    "net"
+    "net",
 ] }
 
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
-notify   = { version = "8.2.0", default-features = false, features = ["macos_kqueue"] }
+notify = { version = "8.2.0", default-features = false, features = [
+    "macos_kqueue",
+] }
 
 # errors
 thiserror = "2.0.18"
+anyhow = "1.0.102"
 
 # data
 serde = { version = "1.0.228", features = ["derive"] }
