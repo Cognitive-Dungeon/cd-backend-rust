@@ -1,5 +1,27 @@
 {
-    "workbench.editorAssociations": {
-        "*.cdb" : "depot.data",
-    }
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.cargo.allFeatures": true,
+  "rust-analyzer.showUnlinkedFileNotification": false,
+  "editor.formatOnSave": true,
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/target": true,
+    "**/node_modules": true,
+    "tools/vscode-extension/out": true
+  },
+  "search.exclude": {
+    "**/target": true,
+    "**/node_modules": true,
+    "tools/vscode-extension/out": true
+  }
 }

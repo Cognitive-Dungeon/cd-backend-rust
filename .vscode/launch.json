@@ -1,0 +1,48 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        // 1. Отладка самого движка (Rust)
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Engine (cd-app)",
+            "cargo": {
+                "args": [
+                    "build",
+                    "-p",
+                    "cd-app"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "debug", // Уровень логирования tracing
+                "RUST_BACKTRACE": "1"
+            }
+        },
+        // 2. Отладка SDK
+        {
+            "name": "Debug SDK (Extension Host)",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/tools/vscode-extension",
+                "${workspaceFolder}/data"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/tools/vscode-extension/out/**/*.js"
+            ],
+            "preLaunchTask": "npm: watch-ts"
+        }
+    ],
+    // 3. Запуск ВСЕГО ОДНОВРЕМЕННО
+    "compounds": [
+        {
+            "name": "Full Stack: Engine + SDK",
+            "configurations": [
+                "Debug Engine (cd-app)",
+                "Debug SDK (Extension Host)"
+            ]
+        }
+    ]
+}

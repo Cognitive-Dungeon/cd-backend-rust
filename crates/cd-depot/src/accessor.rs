@@ -46,6 +46,18 @@ impl<'a> LineAccessor<'a> {
         self.data[field].as_str().unwrap_or("")
     }
 
+    /// Возвращает hex-строку цвета. Если цвета нет, возвращает белый ("#ffffff")
+    pub fn color(&self, field: &str) -> &str {
+        let s = self.data[field].as_str().unwrap_or("");
+        if s.is_empty() { "#ffffff" } else { s }
+    }
+
+    /// Возвращает hex-строку цвета с кастомным значением по умолчанию
+    pub fn color_or<'b>(&'b self, field: &str, default: &'b str) -> &'b str {
+        let s = self.data[field].as_str().unwrap_or("");
+        if s.is_empty() { default } else { s }
+    }
+
     pub fn char(&self, field: &str) -> char {
         self.data[field]
             .as_str()

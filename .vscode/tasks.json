@@ -1,0 +1,85 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cargo build (engine)",
+            "type": "cargo",
+            "command": "build",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "cargo run (engine)",
+            "type": "cargo",
+            "command": "run",
+            "args": [
+                "-p",
+                "cd-app"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "cargo test (workspace)",
+            "type": "cargo",
+            "command": "test",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
+            "label": "npm: watch-ts",
+            "type": "npm",
+            "script": "watch",
+            "options": {
+                "cwd": "${workspaceFolder}/tools/vscode-extension"
+            },
+            "isBackground": true,
+            "problemMatcher": "$tsc-watch",
+            "presentation": {
+                "reveal": "never",
+                "group": "sdk-watchers"
+            }
+        },
+        {
+            "label": "npm: watch-svelte",
+            "type": "npm",
+            "script": "svelte-dev",
+            "options": {
+                "cwd": "${workspaceFolder}/tools/vscode-extension"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "rollup v",
+                    "endsPattern": "created out/compiled/bundle.js"
+                }
+            },
+            "presentation": {
+                "reveal": "never",
+                "group": "sdk-watchers"
+            }
+        },
+        // Эта общая задача запустит оба вотчера для SDK одновременно
+        {
+            "label": "Start SDK Watchers",
+            "dependsOn": [
+                "npm: watch-ts",
+                "npm: watch-svelte"
+            ],
+            "problemMatcher": [],
+        }
+    ]
+}
