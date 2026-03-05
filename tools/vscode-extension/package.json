@@ -1,0 +1,57 @@
+{
+  "name": "cognitive-dungeon-sdk",
+  "displayName": "Cognitive Dungeon SDK",
+  "description": "Developer tools for Cognitive Dungeon Engine",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "cde-explorer", "title": "Cognitive Dungeon", "icon": "$(game)" }
+      ]
+    },
+    "views": {
+      "cde-explorer": [
+        { "id": "cde.entities", "name": "Entities", "icon": "$(person)" }
+      ]
+    },
+    "commands": [
+      { "command": "cde.connect",         "title": "CDE: Connect to Engine" },
+      { "command": "cde.disconnect",       "title": "CDE: Disconnect" },
+      { "command": "cde.openTelemetry",    "title": "CDE: Open Telemetry Panel" },
+      { "command": "cde.refreshEntities",  "title": "CDE: Refresh Entities", "icon": "$(refresh)" },
+      { "command": "cde.spawnTestEntity",  "title": "CDE: Spawn Test Entity" }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "cde.refreshEntities",
+          "when": "view == cde.entities",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Cognitive Dungeon SDK",
+      "properties": {
+        "cde.engineUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8080",
+          "description": "Engine HTTP base URL"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch":   "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node":   "^20.0.0",
+    "typescript":    "^5.3.0"
+  }
+}

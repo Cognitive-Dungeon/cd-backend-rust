@@ -5,7 +5,9 @@ use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
 use cd_net::protocol::{EntityView, ServerPacket};
+use cd_net::{ApiEntity, ApiState, SharedApiState};
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 use tokio::sync::broadcast;
 use tracing::{Level, error, info};
@@ -35,6 +37,10 @@ async fn main() {
     let (engine_stop_tx, engine_stop_rx) = tokio::sync::oneshot::channel::<()>();
     let (net_stop_tx, net_stop_rx) = tokio::sync::oneshot::channel::<()>();
 
+    let api_state: SharedApiState = Arc::new(Mutex::new(ApiState::default()));
+    let api_state_engine = api_state.clone();
+    let api_state_net = api_state.clone();
+
     // --- Engine Thread (CPU-bound, отдельный OS поток) ---
     let engine_handle = std::thread::spawn(move || {
         let mut engine = EngineBuilder::new()
@@ -45,7 +51,6 @@ async fn main() {
             .build();
 
         engine.register_system("movement", cd_engine::systems::movement::run);
-        
 
         // Setup начального состояния мира
         let mut chunk = Chunk::new();
@@ -99,6 +104,22 @@ async fn main() {
                     color: format!("#{:06X}", snap.color_rgb),
                 })
                 .collect();
+            
+            let snapshots = engine.snapshot_entities();
+            if let Ok(mut state) = api_state_engine.lock() {
+                state.tick = engine.current_tick().0;
+                state.entity_count = snapshots.len() as u32;
+                state.entities = snapshots
+                    .into_iter()
+                    .map(|s| ApiEntity {
+                        guid: s.guid.map(|g| g.to_string()).unwrap_or_default(),
+                        x: s.x,
+                        y: s.y,
+                        glyph: s.glyph,
+                        color: format!("#{:06X}", s.color_rgb),
+                    })
+                    .collect();
+            }
 
             let packet = ServerPacket::Snapshot {
                 tick: engine.current_tick().0,
@@ -120,7 +141,7 @@ async fn main() {
 
     // --- Сетевой слой ---
     let net_handle = tokio::spawn(async move {
-        cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx, net_stop_rx).await;
+        cd_net::run_server(8080, cmd_sender, snapshot_tx_net, telemetry_tx, net_stop_rx, api_state_net).await;
         info!("Network finished");
     });
 

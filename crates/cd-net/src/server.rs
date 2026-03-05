@@ -1,3 +1,4 @@
+use crate::api::{SharedApiState, handler_get_state};
 use crate::protocol::{ClientPacket, ServerPacket};
 use crate::telemetry::{TelemetryState, telemetry_ws_handler};
 use axum::{
@@ -30,15 +31,27 @@ pub async fn run_server(
     snapshot_tx: tbroadcast::Sender<ServerPacket>,
     telemetry_tx: tbroadcast::Sender<EngineEvent>,
     stop_rx: oneshot::Receiver<()>,
+    api_state: SharedApiState,
 ) {
     let game_state = Arc::new(AppState { cmd_tx, snapshot_tx });
     let telemetry_state: TelemetryState = Arc::new(telemetry_tx);
 
     let app = Router::new()
-        .route("/ws", get(ws_handler))
-        .with_state(game_state)
-        .route("/telemetry", get(telemetry_ws_handler))
-        .with_state(telemetry_state);
+        .merge(
+            Router::new()
+                .route("/ws", get(ws_handler))
+                .with_state(game_state)
+        )
+        .merge(
+            Router::new()
+                .route("/telemetry", get(telemetry_ws_handler))
+                .with_state(telemetry_state)
+        )
+        .merge(
+            Router::new()
+                .route("/api/state", get(handler_get_state))
+                .with_state(api_state)
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("🌐 Network listening on {}", addr);
