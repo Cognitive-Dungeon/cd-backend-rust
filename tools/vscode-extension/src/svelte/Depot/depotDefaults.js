@@ -245,6 +245,19 @@ export let defaults = {
             }
         }
     },
+    "color": {
+        "typeStr": "color",
+        "guid": "",
+        "description": "Hex color field",
+        "name": "newColor",
+        "defaultValue": "#ffffff",
+        "iconName": "newColor",
+        "configurable": {
+            "name": "text",
+            "description": "text",
+            "defaultValue": "color"
+        }
+    },
 };
 
 //every new column needs a name, guid, typeStr, and defaultValue field

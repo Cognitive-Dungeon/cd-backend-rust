@@ -25,6 +25,7 @@ import { createEventDispatcher } from 'svelte';
 import ConfigLineSelect from '../Fields/Config/ConfigLineSelect.svelte';
 import ConfigColumnSelect from '../Fields/Config/ConfigColumnSelect.svelte';
 import GridField from '../Fields/GridField.svelte';
+import ColorField from '../Fields/ColorField.svelte';
 const dispatch = createEventDispatcher();
 function configUpdate(updateType) {
     dispatch('message', {
@@ -148,6 +149,9 @@ $: {
                 <div><MultipleField bind:data={data[fieldName]}/></div> -->
                 {:else if columnSettings[fieldName] === "int" || columnSettings[fieldName] === "float"}
                 <div><NumberField bind:data={data[fieldName]}/></div>
+
+                {:else if columnSettings[fieldName] === "color"}
+                <div><ColorField bind:data={data[fieldName]}/></div>
                 
                 {:else if columnSettings[fieldName] === "enum"}
                 <div><EnumField allowEmpty={false} bind:data={data[fieldName]} options={columnSettings["enum@"+fieldName].options}/></div>

@@ -26,6 +26,7 @@ import NumberField from '../Fields/NumberField.svelte';
 import FileField from '../Fields/FileField.svelte';
 import {defaults} from './depotDefaults';
 import { v4 as uuidv4 } from 'uuid';
+import ColorField from '../Fields/ColorField.svelte';
 
 import { createEventDispatcher } from 'svelte';
 import GridFieldTableEditor from '../Fields/GridFieldTableEditor.svelte';
@@ -450,6 +451,8 @@ function validateID(event,line) {
                 <FileField sheetGUID={sheetData.guid} bind:data={line[column.name]} on:message fileKey={{"line":line,"lineIndex":i,"column":column,"columnIndex":c}}/>
                 {:else if column.typeStr === "bool"}
                 <BooleanField bind:data={line[column.name]}/>
+                {:else if column.typeStr === "color"}
+                <ColorField bind:data={line[column.name]}/>
                 {:else if column.typeStr === "enum"}
                 <EnumField bind:data={line[column.name]} options={sheetData.columns.find(x => x.name === column.name).options.split(', ')}/>
                 {:else if column.typeStr === "sheetReference"}
