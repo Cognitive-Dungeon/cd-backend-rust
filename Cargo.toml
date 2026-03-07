@@ -43,8 +43,6 @@ cd-map = { path = "crates/cd-map" }
 cd-net = { path = "crates/cd-net" }
 cd-telemetry = { path = "crates/cd-telemetry" }
 cd-data = { path = "crates/cd-data" }
-cd-data-json = { path = "crates/cd-data-json" }
-cd-depot = { path = "crates/cd-depot" }
 
 # runtime
 tokio = { version = "1.49.0", default-features = false, features = [

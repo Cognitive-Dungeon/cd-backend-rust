@@ -4,8 +4,7 @@ use crate::system_runner::SystemRunner;
 use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};
-use cd_data::{EntityRepository, WorldRepository};
-use cd_depot::{Depot};
+use cd_data::{EntityRepository, WorldRepository, depot::Depot};
 use cd_ecs::components::{Name, Position, Render, Stats};
 use cd_map::{SpatialGrid, WorldMap};
 use cd_telemetry::{EngineEvent, NullSink, TelemetrySink};
@@ -104,7 +103,7 @@ impl Engine {
 
     /// Перезагрузить данные из файла (вызывается file watcher'ом или VS Code).
     pub fn reload_game_data(&self, path: &std::path::Path) {
-        match cd_depot::Depot::load(path) {
+        match Depot::load(path) {
             Ok(depot) => {
                 *self.game_data.write().unwrap() = Some(depot);
                 tracing::info!("Depot reloaded from {:?}", path);

@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use cd_core::{ObjectGuid, WorldPos};
+use cd_data::depot::Depot;
 use cd_ecs::components::{Position, Stats};
 use cd_map::{SpatialGrid, Tile, WorldMap};
 use cd_telemetry::TelemetrySink;
@@ -30,7 +31,7 @@ pub struct GameWorld<'a> {
     pub(crate) registry: &'a mut EntityRegistry,
     pub(crate) commands: &'a mut CommandBuffer,
     pub(crate) telemetry: &'a dyn TelemetrySink,
-    pub(crate) game_data: Arc<RwLock<Option<cd_depot::Depot>>>,
+    pub(crate) game_data: Arc<RwLock<Option<Depot>>>,
 }
 
 impl<'a> GameWorld<'a> {
@@ -196,7 +197,7 @@ impl<'a> GameWorld<'a> {
     /// ```rust
     /// let mat = world.depot().materials.get("stone").cloned();
     /// ```
-    pub fn depot(&self) -> std::sync::RwLockReadGuard<'_, Option<cd_depot::Depot>> {
+    pub fn depot(&self) -> std::sync::RwLockReadGuard<'_, Option<Depot>> {
         self.game_data.read().unwrap()
     }
 }

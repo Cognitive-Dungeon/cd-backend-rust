@@ -1,7 +1,7 @@
 mod dto;
 
+use crate::{DataError, EntityRepository, PersistedEntity, WorldRepository};
 use cd_core::{ObjectGuid, WorldPos};
-use cd_data::{DataError, EntityRepository, PersistedEntity, WorldRepository};
 use cd_map::Chunk;
 use dto::ChunkDto;
 use std::path::{Path, PathBuf};

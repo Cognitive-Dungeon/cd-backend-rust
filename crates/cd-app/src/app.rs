@@ -1,6 +1,6 @@
 use anyhow::Result;
 use cd_core::{ObjectGuid, WorldPos};
-use cd_data_json::{JsonEntityRepository, JsonWorldRepository};
+use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
 use cd_net::protocol::{EntityView, ServerPacket};
@@ -75,7 +75,7 @@ impl ApplicationBuilder {
 
         // --- 2. Разделяемое состояние (State) ---
         let api_state: SharedApiState = Arc::new(Mutex::new(ApiState::default()));
-        let game_data: Arc<RwLock<Option<cd_depot::Depot>>> = Arc::new(RwLock::new(None));
+        let game_data: Arc<RwLock<Option<cd_engine::Depot>>> = Arc::new(RwLock::new(None));
 
         // --- 3. Репозитории и Горячая перезагрузка ---
         let depot_path =
@@ -87,7 +87,7 @@ impl ApplicationBuilder {
             let game_data_api = game_data.clone();
             let depot_path_api = depot_path.clone();
             Arc::new(tokio::sync::Mutex::new(Box::new(
-                move || match cd_depot::Depot::load(&depot_path_api) {
+                move || match cd_engine::Depot::load(&depot_path_api) {
                     Ok(depot) => *game_data_api.write().unwrap() = Some(depot),
                     Err(e) => tracing::error!("API reload failed: {}", e),
                 },
@@ -145,7 +145,7 @@ fn spawn_engine_thread(
     telemetry_sink: Arc<BroadcastSink>,
     world_repo: Arc<JsonWorldRepository>,
     entity_repo: Arc<JsonEntityRepository>,
-    game_data: Arc<RwLock<Option<cd_depot::Depot>>>,
+    game_data: Arc<RwLock<Option<cd_engine::Depot>>>,
     api_state: SharedApiState,
     depot_path: std::path::PathBuf,
     tick_rate: Duration,
@@ -160,7 +160,7 @@ fn spawn_engine_thread(
 
         // Первичная загрузка данных
         if depot_path.exists() {
-            match cd_depot::Depot::load(&depot_path) {
+            match cd_engine::Depot::load(&depot_path) {
                 Ok(depot) => *game_data.write().unwrap() = Some(depot),
                 Err(e) => error!("Failed to load initial depot: {}", e),
             }
@@ -169,7 +169,7 @@ fn spawn_engine_thread(
         // Следим за файлом для hot-reload
         let game_data_watcher = game_data.clone();
         let _watcher = cd_engine::watcher::spawn_depot_watcher(depot_path, move |path| {
-            match cd_depot::Depot::load(path) {
+            match cd_engine::Depot::load(path) {
                 Ok(depot) => *game_data_watcher.write().unwrap() = Some(depot),
                 Err(e) => error!("Hot reload from watcher failed: {}", e),
             }

@@ -1,13 +1,13 @@
-mod format;
 pub mod accessor;
 pub mod error;
+mod format;
 
-use std::collections::HashMap;
-use accessor::{SheetAccessor, LineAccessor};
+use accessor::{LineAccessor, SheetAccessor};
 use error::DepotError;
 use format::DepotFile;
+use std::collections::HashMap;
 
-pub use accessor::{FromDepotLine, SheetAccessor as Sheet, LineAccessor as Line};
+pub use accessor::{FromDepotLine, LineAccessor as Line, SheetAccessor as Sheet};
 pub use error::DepotError as Error;
 
 /// Загруженный .dpo файл.
@@ -33,14 +33,13 @@ pub struct Depot {
 
 impl Depot {
     pub fn load(path: &std::path::Path) -> Result<Self, DepotError> {
-        let bytes = std::fs::read(path)
-            .map_err(|e| DepotError::Io(e.to_string()))?;
+        let bytes = std::fs::read(path).map_err(|e| DepotError::Io(e.to_string()))?;
         Self::from_bytes(&bytes)
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, DepotError> {
-        let file: DepotFile = serde_json::from_slice(bytes)
-            .map_err(|e| DepotError::Parse(e.to_string()))?;
+        let file: DepotFile =
+            serde_json::from_slice(bytes).map_err(|e| DepotError::Parse(e.to_string()))?;
 
         let mut sheets: HashMap<String, Vec<serde_json::Value>> = HashMap::new();
         let mut guid_index: HashMap<String, (String, usize)> = HashMap::new();
@@ -49,10 +48,7 @@ impl Depot {
             // Строим GUID индекс для ВСЕХ листов (включая hidden — они нужны для lineRef)
             for (idx, line) in sheet.lines.iter().enumerate() {
                 if let Some(guid) = line["guid"].as_str() {
-                    guid_index.insert(
-                        guid.to_string(),
-                        (sheet.name.clone(), idx),
-                    );
+                    guid_index.insert(guid.to_string(), (sheet.name.clone(), idx));
                 }
             }
 
