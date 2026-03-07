@@ -1,6 +1,6 @@
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
     extract::State,
+    extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
 };
 use cd_telemetry::EngineEvent;
@@ -30,7 +30,7 @@ async fn handle_telemetry_socket(socket: WebSocket, tx: TelemetryState) {
                 Ok(s) => s,
                 Err(_) => continue,
             };
-            if sender.send(Message::Text(json)).await.is_err() {
+            if sender.send(Message::Text(json.into())).await.is_err() {
                 break;
             }
         }

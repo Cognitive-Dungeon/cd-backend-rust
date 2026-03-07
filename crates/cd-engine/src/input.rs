@@ -15,4 +15,8 @@ pub enum InputCmd {
         spell_id: u32,
         target: ObjectGuid,
     },
+    SpawnPlayer {
+        entity_guid: ObjectGuid,
+        name: String,
+    },
 }

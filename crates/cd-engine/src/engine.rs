@@ -219,6 +219,10 @@ impl Engine {
 
     fn handle_input(&mut self, cmd: InputCmd) {
         match cmd {
+            InputCmd::SpawnPlayer { entity_guid, name } => {
+                let spawn_pos = WorldPos::new(0, 0, 0);
+                self.spawn_player(entity_guid, name, spawn_pos);
+            }
             InputCmd::Move {
                 entity_guid,
                 target,
