@@ -1,6 +1,7 @@
 pub mod api;
 pub mod error;
 pub mod handlers;
+mod manager;
 pub mod protocol;
 pub mod router;
 pub mod server;

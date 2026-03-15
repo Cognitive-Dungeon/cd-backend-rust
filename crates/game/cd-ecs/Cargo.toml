@@ -6,6 +6,7 @@ authors.workspace = true
 
 [dependencies]
 cd-core = { workspace = true }
+cd-common = { workspace = true }
 hecs = { workspace = true }
 serde = { workspace = true }
 

@@ -144,8 +144,7 @@ impl Engine {
             Position(pos),
             Name(name.clone()),
             Render {
-                glyph: '@',
-                color_rgb: 0x00FF00,
+                glyph: cd_common::Glyph::new(0x00FF00, b'@'),
             },
             Stats {
                 hp: 100,
@@ -264,7 +263,6 @@ impl Engine {
                 x: pos.0.x(),
                 y: pos.0.y(),
                 glyph: render.glyph,
-                color_rgb: render.color_rgb,
             })
             .collect()
     }

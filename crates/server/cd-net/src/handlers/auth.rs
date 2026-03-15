@@ -12,7 +12,7 @@ pub async fn handle_login(session: Session, cmd_tx: CommandSender, token: String
     let guid = ObjectGuid::new(1, 1, 1, hasher.finish() as u32);
 
     // 2. Обновляем сессию
-    session.set_authenticated(guid, token.clone()).await;
+    session.set_authenticated(guid).await;
 
     // 3. Шлем команду движку
     let cmd = InputCmd::SpawnPlayer {
@@ -28,7 +28,7 @@ pub async fn handle_login(session: Session, cmd_tx: CommandSender, token: String
     let resp = ServerPacket::AuthSuccess {
         guid: guid.to_string(),
     };
-    session.send_json(&resp).await?;
+    session.send_packet(resp).await;
 
     tracing::info!("Session authenticated: {:?}", guid);
     Ok(())

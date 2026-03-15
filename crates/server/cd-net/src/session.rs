@@ -1,52 +1,46 @@
+// crates/cd-net/src/session.rs
 use crate::error::{NetError, NetResult};
-use axum::extract::ws::Message;
+use crate::manager::SharedManager;
+use crate::protocol::ServerPacket;
 use cd_core::ObjectGuid;
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::RwLock;
 
-/// Состояние сессии, защищенное RwLock (чтобы менять GUID при логине)
-#[derive(Debug, Default)]
-pub struct SessionState {
-    pub guid: Option<ObjectGuid>,
-    pub username: Option<String>,
-}
-
-/// Хэндл сессии, который дешево клонировать и передавать в хендлеры
+/// Легкий клонируемый хэндл сессии для передачи в обработчики.
 #[derive(Clone)]
 pub struct Session {
-    id: u64, // Внутренний ID соединения (для логов)
-    sender: mpsc::Sender<Message>,
-    state: Arc<RwLock<SessionState>>,
+    pub id: u64,
+    manager: SharedManager,
+    // Локальный кэш для O(1) проверок авторизации внутри роутера
+    guid_cache: Arc<RwLock<Option<ObjectGuid>>>,
 }
 
 impl Session {
-    pub fn new(id: u64, sender: mpsc::Sender<Message>) -> Self {
+    pub fn new(id: u64, manager: SharedManager) -> Self {
         Self {
             id,
-            sender,
-            state: Arc::new(RwLock::new(SessionState::default())),
+            manager,
+            guid_cache: Arc::new(RwLock::new(None)),
         }
     }
 
-    pub async fn send_json(&self, value: &impl serde::Serialize) -> NetResult<()> {
-        let text = serde_json::to_string(value)?;
-        self.sender
-            .send(Message::Text(text.into()))
-            .await
-            .map_err(|_| NetError::Ws(axum::Error::new("Sender dropped"))) // Упрощение
+    /// Отправляет пакет клиенту напрямую через менеджера
+    pub async fn send_packet(&self, packet: ServerPacket) {
+        self.manager.send_to_session(self.id, packet).await;
     }
 
-    pub async fn set_authenticated(&self, guid: ObjectGuid, name: String) {
-        let mut state = self.state.write().await;
-        state.guid = Some(guid);
-        state.username = Some(name);
+    /// Привязывает GUID к этой сессии
+    pub async fn set_authenticated(&self, guid: ObjectGuid) {
+        *self.guid_cache.write().await = Some(guid);
+        // Делегируем сложную логику (вытеснение, флаг буферов) менеджеру
+        self.manager.authenticate_agent(self.id, guid).await;
     }
 
     pub async fn get_guid(&self) -> Option<ObjectGuid> {
-        self.state.read().await.guid
+        *self.guid_cache.read().await
     }
 
-    // Хелпер для middleware проверки
+    /// Хелпер для middleware проверки авторизации
     pub async fn require_guid(&self) -> NetResult<ObjectGuid> {
         self.get_guid().await.ok_or(NetError::Unauthorized)
     }

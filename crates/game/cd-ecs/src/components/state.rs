@@ -1,4 +1,4 @@
-use cd_core::{WorldPos};
+use cd_core::WorldPos;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(transparent)]
@@ -16,8 +16,7 @@ pub struct Stats {
 /// В Go: RenderComponent { Glyph }
 #[derive(Debug, Clone, Copy)]
 pub struct Render {
-    pub glyph: char,
-    pub color_rgb: u32, // 0xRRGGBB
+    pub glyph: cd_common::Glyph,
 }
 
 /// Имя (для UI и логов).
