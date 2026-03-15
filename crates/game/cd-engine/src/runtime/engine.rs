@@ -1,6 +1,6 @@
 use crate::game_world::GameWorld;
-use crate::registry::EntityRegistry;
 use crate::system_runner::SystemRunner;
+use crate::world::registry::EntityRegistry;
 use crate::{EntitySnapshot, input::InputCmd};
 use crate::{StampedCommand, TickContext, TickId, systems};
 use cd_core::{ObjectGuid, WorldPos};

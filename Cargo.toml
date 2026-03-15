@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/*"]
+members = ["crates/shared/*", "crates/game/*", "crates/server/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -34,15 +34,17 @@ strip = false
 [workspace.dependencies]
 
 # local
-cd-app = { path = "crates/cd-app" }
-cd-common = { path = "crates/cd-common" }
-cd-core = { path = "crates/cd-core" }
-cd-ecs = { path = "crates/cd-ecs" }
-cd-engine = { path = "crates/cd-engine" }
-cd-map = { path = "crates/cd-map" }
-cd-net = { path = "crates/cd-net" }
-cd-telemetry = { path = "crates/cd-telemetry" }
-cd-data = { path = "crates/cd-data" }
+cd-common = { path = "crates/shared/cd-common" }
+cd-core = { path = "crates/shared/cd-core" }
+
+cd-ecs = { path = "crates/game/cd-ecs" }
+cd-map = { path = "crates/game/cd-map" }
+cd-data = { path = "crates/game/cd-data" }
+cd-engine = { path = "crates/game/cd-engine" }
+
+cd-telemetry = { path = "crates/server/cd-telemetry" }
+cd-net = { path = "crates/server/cd-net" }
+cd-app = { path = "crates/server/cd-app" }
 
 # runtime
 tokio = { version = "1.49.0", default-features = false, features = [

@@ -8,7 +8,7 @@ use cd_telemetry::TelemetrySink;
 use hecs::{CommandBuffer, World};
 
 use crate::game_error::{DamageResult, GameError};
-use crate::registry::EntityRegistry;
+use crate::world::registry::EntityRegistry;
 
 /// Фасад для написания игровой логики.
 ///

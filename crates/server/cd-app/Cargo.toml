@@ -6,10 +6,10 @@ authors.workspace = true
 
 [dependencies]
 cd-core = { workspace = true }
-cd-ecs = { path = "../cd-ecs" }
-cd-map = { path = "../cd-map" }
-cd-engine = { path = "../cd-engine" }
-cd-net = { path = "../cd-net" }
+cd-ecs = { workspace = true }
+cd-map = { workspace = true }
+cd-engine = { workspace = true }
+cd-net = { workspace = true }
 cd-data = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
