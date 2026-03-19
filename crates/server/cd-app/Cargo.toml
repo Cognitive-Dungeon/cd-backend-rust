@@ -14,7 +14,7 @@ cd-data = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-hecs = { workspace = true }
+bevy_ecs = { workspace = true }
 anyhow = { workspace = true }
 
 [lints]

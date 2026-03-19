@@ -1,5 +1,5 @@
+use bevy_ecs::entity::Entity;
 use cd_core::ObjectGuid;
-use hecs::Entity;
 use std::collections::HashMap;
 
 /// Отвечает за связь между постоянным GUID (БД/Сеть) и временным ECS Entity.

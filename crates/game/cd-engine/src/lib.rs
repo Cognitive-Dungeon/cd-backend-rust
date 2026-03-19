@@ -11,9 +11,7 @@ pub use cd_telemetry::{BroadcastSink, EngineEvent, NullSink, TelemetrySink};
 pub use command_bus::{CommandBus, CommandSender, StampedCommand};
 pub use engine::Engine;
 pub use game_error::{DamageResult, GameError};
-pub use game_world::GameWorld;
 pub use input::InputCmd;
-pub use system_runner::SystemRunner;
 pub use tick::{TickContext, TickId};
 
 pub use builder::EngineBuilder;
@@ -23,6 +21,6 @@ pub use snapshot::EntitySnapshot;
 
 use crate::{
     input::command_bus,
-    runtime::{builder, engine, system_runner, tick},
-    world::{game_world, snapshot},
+    runtime::{builder, engine, tick},
+    world::snapshot,
 };

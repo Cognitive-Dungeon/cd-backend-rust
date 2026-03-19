@@ -176,7 +176,8 @@ fn spawn_engine_thread(
         });
 
         // 2. Регистрация систем и генерация тестового мира
-        engine.register_system("movement", cd_engine::systems::movement::run);
+        engine.add_system(cd_engine::systems::input::handle_input_system);
+        engine.add_system(cd_engine::systems::movement::run);
         setup_initial_world(&mut engine);
 
         // 3. Главный игровой цикл (Game Loop)
@@ -192,7 +193,7 @@ fn spawn_engine_thread(
 
             // Шаг Б: Транслятор (Адаптер) отправляет слепок мира в Сеть
             // В будущем мы перенесем этот вызов внутрь engine.tick()
-            publish_state(&engine, &api_state, &outbound_rx);
+            publish_state(&mut engine, &api_state, &outbound_rx);
 
             // Шаг В: Сон до начала следующего тика
             let elapsed = start.elapsed();
@@ -212,11 +213,11 @@ fn spawn_engine_thread(
 
 /// Транслирует внутренний формат движка (EntitySnapshot) в DTO для Сети и REST API
 fn publish_state(
-    engine: &Engine,
+    engine: &mut Engine,
     api_state: &SharedApiState,
     outbound_tx: &broadcast::Sender<cd_net::protocol::OutboundMessage>,
 ) {
-    let snapshots = engine.snapshot_entities();
+    let snapshots = cd_engine::world::SnapshotBuilder::build_entities(&mut engine.world);
     let tick = engine.current_tick().0;
 
     // 1. REST API (для админки / отладки)

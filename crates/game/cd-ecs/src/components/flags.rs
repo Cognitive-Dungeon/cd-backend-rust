@@ -1,5 +1,7 @@
-#[derive(Debug, Clone, Copy)]
+use bevy_ecs::component::Component;
+
+#[derive(Debug, Clone, Copy, Component)]
 pub struct IsDead;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Component)]
 pub struct IsAgent;

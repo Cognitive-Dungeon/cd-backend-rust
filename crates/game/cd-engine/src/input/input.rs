@@ -1,8 +1,9 @@
+use bevy_ecs::message::Message;
 use cd_core::{ObjectGuid, WorldPos};
 
 /// Команды, которые меняют состояние мира.
 /// Это "чистые" данные.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Message)]
 pub enum InputCmd {
     /// Игрок хочет переместиться
     Move {
