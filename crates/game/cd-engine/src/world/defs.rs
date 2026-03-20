@@ -5,6 +5,7 @@ use cd_map::{MaterialID, TileFlags};
 /// Определение материала (тайла карты)
 #[derive(Debug, Clone)]
 pub struct MaterialDef {
+    pub mat_id: MaterialID,
     pub slug: String,
     pub name: String,
     pub desc: String,
@@ -29,6 +30,7 @@ impl FromDepotLine for MaterialDef {
         Ok(Self {
             // В Materials id это "0", "1", а slug это "void", "floor_stone".
             // Поэтому берем text("slug"). В будущем перенести слаги прямо в id.
+            mat_id: line.id().parse::<MaterialID>().unwrap_or(0),
             slug: line.text("slug").to_string(),
             name: line.text("name").to_string(),
             desc: line.text("desc").to_string(),

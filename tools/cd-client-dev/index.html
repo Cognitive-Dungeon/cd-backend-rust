@@ -100,6 +100,7 @@
     // --- State ---
     let ws = null;
     let worldState = { tick: 0, entities: [] };
+    let chunks = {};
     let myGuid = null;
     let camera = { x: 0, y: 0 }; // В тайлах
     let hoverTile = { x: 0, y: 0 };
@@ -150,6 +151,11 @@
                     myGuid = player.guid;
                 }
                 render();
+            } else if (data.op === "MapChunk") {
+                // Сохраняем чанк в кэш
+                const chunkKey = `${data.d.x}_${data.d.y}`;
+                chunks[chunkKey] = data.d;
+                render(); // Перерисовываем экран
             } else {
                 logNet("IN", msg.data, true);
             }
@@ -205,6 +211,36 @@
         // 2. Подсветка тайла под мышкой
         ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
         ctx.fillRect(hoverTile.x * TILE_SIZE + offsetX, hoverTile.y * TILE_SIZE + offsetY, TILE_SIZE, TILE_SIZE);
+
+        // --- ОТРИСОВКА КАРТЫ (ЧАНКОВ) ---
+        ctx.font = `bold ${TILE_SIZE * 0.8}px Consolas`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (const key in chunks) {
+            const chunk = chunks[key];
+            const startX = chunk.x * 16; // Чанк 16x16
+            const startY = chunk.y * 16;
+
+            for (let i = 0; i < 256; i++) {
+                const lx = i % 16;
+                const ly = Math.floor(i / 16);
+                
+                // Получаем индекс из массива и берем тайл из палитры
+                const palIdx = chunk.indices[i];
+                const tile = chunk.palette[palIdx]; 
+
+                // Не рисуем пустоту (пробелы)
+                if (tile && tile.glyph !== ' ') {
+                    const px = (startX + lx) * TILE_SIZE + offsetX + TILE_SIZE/2;
+                    const py = (startY + ly) * TILE_SIZE + offsetY + TILE_SIZE/2;
+                    
+                    ctx.fillStyle = tile.color;
+                    ctx.fillText(tile.glyph, px, py);
+                }
+            }
+        }
+        // --- КОНЕЦ ОТРИСОВКИ КАРТЫ ---
 
         // 3. Отрисовка Entity
         ctx.font = `bold ${TILE_SIZE * 0.8}px Consolas`;

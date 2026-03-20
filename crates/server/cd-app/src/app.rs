@@ -2,9 +2,10 @@
 use anyhow::Result;
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
+use cd_engine::world::SnapshotBuilder;
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
-use cd_net::protocol::{EntityView, ServerPacket};
+use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
 use cd_net::{ApiEntity, ApiState, ReloadCallback, SharedApiState};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::JoinHandle;
@@ -182,7 +183,15 @@ fn spawn_engine_thread(
         // 2. Регистрация систем и генерация тестового мира
         engine.add_system(cd_engine::systems::input::handle_input_system);
         engine.add_system(cd_engine::systems::movement::movement_system);
-        setup_initial_world(&mut engine);
+
+        engine.world.resource_scope(
+            |world, mut map: bevy_ecs::prelude::Mut<cd_engine::world::resources::MapResource>| {
+                let defs = world
+                    .get_resource::<cd_engine::world::resources::DefsCache>()
+                    .unwrap();
+                cd_engine::world::generator::WorldGenerator::generate_test_room(&mut map, defs);
+            },
+        );
 
         // 3. Главный игровой цикл (Game Loop)
         loop {
@@ -242,9 +251,10 @@ fn publish_state(
 
     // 2. WebSocket рассылка
     // Если никто не подключен (канал пуст), .send() вернет ошибку, которую мы просто игнорируем (_)
-    let entities_view: Vec<EntityView> = snapshots
+    // 1. ОТПРАВКА СУЩНОСТЕЙ (Каждый тик)
+    let entities_view: Vec<cd_net::protocol::EntityView> = snapshots
         .into_iter()
-        .map(|snap: cd_engine::EntitySnapshot| EntityView {
+        .map(|snap| cd_net::protocol::EntityView {
             guid: snap.guid.map(|g| g.to_string()).unwrap_or_default(),
             x: snap.x,
             y: snap.y,
@@ -257,8 +267,34 @@ fn publish_state(
         tick,
         entities: entities_view,
     };
-    let envelope = cd_net::protocol::OutboundMessage::broadcast(packet);
-    let _ = outbound_tx.send(envelope);
+    let _ = outbound_tx.send(OutboundMessage::broadcast(packet));
+
+    // 2. ОТПРАВКА КАРТЫ (Раз в секунду для теста)
+    if tick.is_multiple_of(20) {
+        // Берем чанк 0,0
+        let chunk_pos = cd_core::WorldPos::new(0, 0, 0);
+        let chunk_snap = SnapshotBuilder::build_chunk(&engine.world, chunk_pos);
+
+        // Перегоняем палитру в сетевой формат TileView
+        let palette_view: Vec<TileView> = chunk_snap
+            .palette
+            .into_iter()
+            .map(|g| TileView {
+                glyph: g.to_char(),
+                color: g.hex_color(),
+            })
+            .collect();
+
+        // Отправляем! Обрати внимание на опечатку в protocol.rs (pallete с двумя l и одной t)
+        let chunk_packet = ServerPacket::MapChunk {
+            x: chunk_snap.chunk_x,
+            y: chunk_snap.chunk_y,
+            palette: palette_view,
+            indices: chunk_snap.indices,
+        };
+
+        let _ = outbound_tx.send(OutboundMessage::broadcast(chunk_packet));
+    }
 }
 
 // -----------------------------------------------------------------------------

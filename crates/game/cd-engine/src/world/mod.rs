@@ -1,4 +1,5 @@
-mod defs;
+pub(crate) mod defs;
+pub mod generator;
 pub mod registry;
 pub mod resources;
 pub mod snapshot;

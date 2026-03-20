@@ -4,7 +4,10 @@ use cd_ecs::components::{Position, Render};
 
 use crate::{
     EntitySnapshot,
-    world::{resources::MapResource, snapshot::ChunkSnapshot},
+    world::{
+        resources::{DefsCache, MapResource},
+        snapshot::ChunkSnapshot,
+    },
 };
 
 pub struct SnapshotBuilder;
@@ -36,10 +39,16 @@ impl SnapshotBuilder {
         let map_res = world
             .get_resource::<MapResource>()
             .expect("MapRes is missing in the world");
+        let defs = world.get_resource::<DefsCache>().unwrap();
 
         let mut palette = Vec::new();
         let mut indices = Vec::with_capacity(256);
         let mut mat_to_pal = std::collections::HashMap::new();
+
+        let mut id_to_glyph = std::collections::HashMap::new();
+        for mat in defs.materials.values() {
+            id_to_glyph.insert(mat.mat_id, mat.glyph);
+        }
 
         for ly in 0..16 {
             for lx in 0..16 {
@@ -48,12 +57,10 @@ impl SnapshotBuilder {
 
                 let tile = map_res.inner.get_tile(pos);
 
-                let glyph = match tile.material {
-                    0 => Glyph::new(0x000000, b' '), // Пустота
-                    1 => Glyph::new(0x555555, b'#'), // Стена
-                    2 => Glyph::new(0x222222, b'.'), // Пол
-                    _ => Glyph::new(0xFF00FF, b'?'), // Неизвестно
-                };
+                let glyph = id_to_glyph
+                    .get(&tile.material)
+                    .copied()
+                    .unwrap_or(Glyph::new(0x000000, b' ')); // Дефолт (Void)
 
                 let pal_idx = *mat_to_pal.entry(tile.material).or_insert_with(|| {
                     let idx = palette.len() as u8;

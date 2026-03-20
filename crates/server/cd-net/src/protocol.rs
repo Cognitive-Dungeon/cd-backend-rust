@@ -67,6 +67,12 @@ pub enum ServerPacket {
         text: String,
         is_private: bool,
     },
+    MapChunk {
+        x: i32,
+        y: i32,
+        palette: Vec<TileView>,
+        indices: Vec<u8>,
+    },
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -76,4 +82,10 @@ pub struct EntityView {
     pub y: i32,
     pub glyph: char,
     pub color: String, // Hex
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct TileView {
+    pub glyph: char,
+    pub color: String,
 }
