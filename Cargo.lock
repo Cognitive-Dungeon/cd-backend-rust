@@ -486,6 +486,7 @@ dependencies = [
 name = "cd-data"
 version = "0.1.0"
 dependencies = [
+ "cd-common",
  "cd-core",
  "cd-map",
  "serde",
@@ -498,9 +499,11 @@ dependencies = [
 name = "cd-ecs"
 version = "0.1.0"
 dependencies = [
+ "ahash 0.8.12",
  "bevy_ecs",
  "cd-common",
  "cd-core",
+ "cd-map",
  "serde",
 ]
 
@@ -541,7 +544,10 @@ name = "cd-net"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "bevy_ecs",
+ "cd-common",
  "cd-core",
+ "cd-ecs",
  "cd-engine",
  "cd-telemetry",
  "dashmap",

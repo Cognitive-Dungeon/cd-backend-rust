@@ -1,6 +1,7 @@
 use bevy_ecs::prelude::*;
 use cd_data::depot::Depot;
-use cd_map::{SpatialGrid, WorldMap};
+use cd_ecs::SpatialGrid;
+use cd_map::WorldMap;
 use cd_telemetry::TelemetrySink;
 use std::{
     collections::HashMap,
@@ -24,7 +25,7 @@ pub struct GridResource {
 /// Обертка над реестром (ObjectGuid <-> Entity)
 #[derive(Resource, Default)]
 pub struct RegistryResource {
-    pub inner: crate::world::registry::EntityRegistry,
+    pub inner: cd_ecs::EntityRegistry,
 }
 
 /// Данные игры (Depot). Используем Arc<RwLock>, так как он может

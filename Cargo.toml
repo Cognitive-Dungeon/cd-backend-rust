@@ -79,6 +79,7 @@ bevy_reflect = { version = "0.18.1" }
 glam = "0.32.1"
 rand_chacha = "0.10"
 
+ahash = "0.8"
 dashmap = "6"
 
 # ---------------- LINTS ----------------

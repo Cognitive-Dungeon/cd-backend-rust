@@ -2,10 +2,10 @@
 use anyhow::Result;
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
-use cd_engine::world::SnapshotBuilder;
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
 use cd_map::{Chunk, Tile, TileFlags};
 use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
+use cd_net::snapshot::SnapshotBuilder;
 use cd_net::{ApiEntity, ApiState, ReloadCallback, SharedApiState};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::JoinHandle;
@@ -230,7 +230,7 @@ fn publish_state(
     api_state: &SharedApiState,
     outbound_tx: &broadcast::Sender<cd_net::protocol::OutboundMessage>,
 ) {
-    let snapshots = cd_engine::world::SnapshotBuilder::build_entities(&mut engine.world);
+    let snapshots = cd_net::snapshot::SnapshotBuilder::build_entities(&mut engine.world);
     let tick = engine.current_tick().0;
 
     // 1. REST API (для админки / отладки)

@@ -1,5 +1,5 @@
+use crate::depot::{FromDepotLine, Line};
 use cd_common::Glyph;
-use cd_data::depot::{FromDepotLine, Line};
 use cd_map::{MaterialID, TileFlags};
 
 /// Определение материала (тайла карты)

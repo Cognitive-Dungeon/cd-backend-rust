@@ -2,13 +2,8 @@ use bevy_ecs::prelude::*;
 use cd_common::Glyph;
 use cd_ecs::components::{Position, Render};
 
-use crate::{
-    EntitySnapshot,
-    world::{
-        resources::{DefsCache, MapResource},
-        snapshot::ChunkSnapshot,
-    },
-};
+use crate::snapshot::{ChunkSnapshot, EntitySnapshot};
+use cd_engine::world::resources::{DefsCache, MapResource};
 
 pub struct SnapshotBuilder;
 

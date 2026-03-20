@@ -1,3 +1,4 @@
+pub mod defs;
 pub mod depot;
 pub mod error;
 pub mod json;

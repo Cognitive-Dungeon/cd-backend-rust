@@ -1,6 +1,9 @@
-use crate::CELL_SIZE;
 use ahash::HashMap;
 use cd_core::{ObjectGuid, WorldPos};
+
+// Размер ячейки сетки (Bucket).
+// 16 - совпадает с размером чанка. Это удобно для маппинга.
+const CELL_SIZE: i32 = cd_map::CHUNK_SIZE;
 
 /// Пространственный индекс.
 /// Позволяет быстро отвечать на вопрос "кто находится в точке X,Y?".

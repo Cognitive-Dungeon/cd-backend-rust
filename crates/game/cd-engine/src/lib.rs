@@ -17,10 +17,8 @@ pub use tick::{TickContext, TickId};
 pub use builder::EngineBuilder;
 
 pub use error::EngineError;
-pub use snapshot::EntitySnapshot;
 
 use crate::{
     input::command_bus,
     runtime::{builder, engine, tick},
-    world::snapshot,
 };
