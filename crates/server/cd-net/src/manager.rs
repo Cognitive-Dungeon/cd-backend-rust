@@ -1,4 +1,3 @@
-// crates/cd-net/src/manager.rs
 use crate::protocol::ServerPacket;
 use cd_core::ObjectGuid;
 use dashmap::DashMap;
@@ -13,31 +12,13 @@ const DEFAULT_RECONNECT_WINDOW: Duration = Duration::from_secs(30);
 const DEFAULT_BUFFER_CAP: usize = 128;
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(10);
 
-// ─── Внутренние типы ──────────────────────────────────────────────────────────
-
-struct SessionEntry {
-    tx: mpsc::Sender<ServerPacket>,
-    /// None = сессия анонимна (до аутентификации)
-    agent_guid: Option<ObjectGuid>,
-}
-
-enum AgentState {
-    /// Агент онлайн, пакеты идут напрямую в канал.
-    Online { session_id: u64 },
-    /// Кратковременный обрыв — пакеты копим, ждём возврата.
-    Reconnecting {
-        deadline: Instant,
-        buffer: VecDeque<ServerPacket>,
-    },
-}
-
 // ─── Конфиг ───────────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
 pub struct ManagerConfig {
     /// Сколько времени агент может быть оффлайн и всё ещё забрать пакеты.
     pub reconnect_window: Duration,
-    /// Максимум буферизованных пакетов (защита от OOM на старом железе).
+    /// Максимум буферизованных пакетов (защита от OOM).
     pub buffer_cap: usize,
 }
 
@@ -50,16 +31,110 @@ impl Default for ManagerConfig {
     }
 }
 
+// ─── Сессия ───────────────────────────────────────────────────────────────────
+
+/// Одно активное WebSocket-соединение.
+/// Существует только пока провод жив.
+struct SessionEntry {
+    /// Канал в сокет этого клиента
+    tx: mpsc::Sender<ServerPacket>,
+    /// None = клиент ещё не прошёл аутентификацию
+    agent_guid: Option<ObjectGuid>,
+}
+
+impl SessionEntry {
+    fn new(tx: mpsc::Sender<ServerPacket>) -> Self {
+        Self {
+            tx,
+            agent_guid: None,
+        }
+    }
+
+    fn bind_agent(&mut self, guid: ObjectGuid) {
+        self.agent_guid = Some(guid);
+    }
+
+    fn unbind_agent(&mut self) {
+        self.agent_guid = None;
+    }
+}
+
+// ─── Агент ────────────────────────────────────────────────────────────────────
+
+/// Состояние игровой сущности с точки зрения сетевого слоя.
+/// Агент существует независимо от конкретного WebSocket-соединения.
+enum AgentState {
+    /// Агент онлайн — пакеты идут напрямую в сессию.
+    Online { session_id: u64 },
+    /// Кратковременный обрыв — пакеты копим, ждём возврата.
+    Reconnecting {
+        deadline: Instant,
+        buffer: VecDeque<ServerPacket>,
+    },
+}
+
+impl AgentState {
+    fn online(session_id: u64) -> Self {
+        Self::Online { session_id }
+    }
+
+    fn reconnecting(window: Duration) -> Self {
+        Self::Reconnecting {
+            deadline: Instant::now() + window,
+            buffer: VecDeque::new(),
+        }
+    }
+
+    fn is_within_reconnect_window(&self) -> bool {
+        matches!(self, Self::Reconnecting { deadline, .. } if Instant::now() < *deadline)
+    }
+
+    fn is_expired(&self) -> bool {
+        matches!(self, Self::Reconnecting { deadline, .. } if Instant::now() > *deadline)
+    }
+
+    /// Если агент в режиме переподключения — буферизуем пакет.
+    /// Возвращает true если пакет был буферизован (и не нужно слать напрямую).
+    fn try_buffer(&mut self, packet: ServerPacket, cap: usize) -> bool {
+        match self {
+            Self::Reconnecting { buffer, .. } => {
+                if buffer.len() < cap {
+                    buffer.push_back(packet);
+                } else {
+                    tracing::warn!("Reconnect buffer full, packet dropped");
+                }
+                true
+            }
+            Self::Online { .. } => false,
+        }
+    }
+
+    /// Забирает накопленный буфер при восстановлении соединения.
+    fn drain_buffer(&mut self) -> VecDeque<ServerPacket> {
+        match self {
+            Self::Reconnecting { buffer, .. } => std::mem::take(buffer),
+            Self::Online { .. } => VecDeque::new(),
+        }
+    }
+
+    fn session_id(&self) -> Option<u64> {
+        match self {
+            Self::Online { session_id } => Some(*session_id),
+            Self::Reconnecting { .. } => None,
+        }
+    }
+}
+
 // ─── Менеджер ─────────────────────────────────────────────────────────────────
 
-/// Управляет сессиями и агентами.
+/// Управляет сессиями (WebSocket-соединениями) и агентами (игровыми сущностями).
 ///
-/// Сессия — эфемерное WebSocket-соединение (session_id).
-/// Агент — персистентная игровая сущность (ObjectGuid).
+/// Ключевое разделение:
+/// - **Сессия** — эфемерна, живёт пока жив провод (session_id: u64)
+/// - **Агент** — персистентен, переживает обрывы связи (ObjectGuid)
 ///
-/// При разрыве связи агент переходит в `Reconnecting`:
-/// пакеты буферизуются и доставляются при переподключении.
-/// Если окно истекло — агент считается ушедшим насовсем.
+/// При разрыве агент переходит в `Reconnecting`: пакеты буферизуются
+/// и доставляются при переподключении в пределах `reconnect_window`.
 pub struct ConnectionManager {
     sessions: DashMap<u64, SessionEntry>,
     agents: DashMap<ObjectGuid, AgentState>,
@@ -89,54 +164,41 @@ impl ConnectionManager {
 
     /// Новое WebSocket-соединение. Агент пока не известен.
     pub fn add_session(&self, session_id: u64, tx: mpsc::Sender<ServerPacket>) {
-        self.sessions.insert(
-            session_id,
-            SessionEntry {
-                tx,
-                agent_guid: None,
-            },
-        );
+        self.sessions.insert(session_id, SessionEntry::new(tx));
         tracing::debug!(session_id, "Session opened");
     }
 
-    /// Соединение закрыто (обрыв, таймаут, etc.).
-    /// Если агент был привязан — запускаем окно переподключения.
+    /// Соединение закрыто — если к сессии был привязан агент,
+    /// запускаем окно переподключения.
     pub fn remove_session(&self, session_id: u64) {
         if let Some((_, entry)) = self.sessions.remove(&session_id)
             && let Some(guid) = entry.agent_guid
         {
-            self.begin_reconnect(guid, session_id);
+            self.begin_reconnect_window(guid, session_id);
         }
         tracing::debug!(session_id, "Session closed");
     }
 
     // ── Агенты ────────────────────────────────────────────────────────────────
 
-    /// Аутентификация: сессия → агент.
+    /// Аутентификация: привязываем сессию к агенту.
     ///
-    /// Варианты:
-    /// - Новый агент: просто регистрируем.
-    /// - Агент был `Reconnecting` в пределах окна: флашим буфер.
-    /// - Агент уже `Online` с другой сессии: выбиваем старую (двойной логин).
+    /// Три сценария:
+    /// - **Новый агент** — просто регистрируем
+    /// - **Агент возвращается** (был `Reconnecting`) — флашим буфер
+    /// - **Двойной логин** (агент уже `Online`) — выбиваем старую сессию
     pub async fn authenticate_agent(&self, session_id: u64, guid: ObjectGuid) {
         // Привязываем guid к сессии (sync, без await)
         if let Some(mut entry) = self.sessions.get_mut(&session_id) {
-            entry.agent_guid = Some(guid);
+            entry.bind_agent(guid);
         }
 
         // Забираем предыдущее состояние агента. Всё sync — до любого await.
         let prev = self.agents.remove(&guid);
         let (evict_session, buffered) = match prev {
-            Some((_, AgentState::Reconnecting { deadline, buffer }))
-                if Instant::now() < deadline =>
-            {
-                tracing::info!(
-                    ?guid,
-                    session_id,
-                    buffered = buffer.len(),
-                    "Agent reconnected within window"
-                );
-                (None, Some(buffer))
+            Some((_, mut state)) if state.is_within_reconnect_window() => {
+                tracing::info!(?guid, session_id, "Agent reconnected within window");
+                (None, Some(state.drain_buffer()))
             }
             Some((
                 _,
@@ -155,8 +217,7 @@ impl ConnectionManager {
             _ => (None, None),
         };
 
-        // Фиксируем новое состояние
-        self.agents.insert(guid, AgentState::Online { session_id });
+        self.agents.insert(guid, AgentState::online(session_id));
 
         // Убиваем вытесненную сессию
         if let Some(old_sid) = evict_session {
@@ -176,7 +237,7 @@ impl ConnectionManager {
         if let Some((_, AgentState::Online { session_id })) = self.agents.remove(&guid)
             && let Some(mut s) = self.sessions.get_mut(&session_id)
         {
-            s.agent_guid = None;
+            s.unbind_agent();
         }
         tracing::info!(?guid, "Agent logged out");
     }
@@ -184,47 +245,28 @@ impl ConnectionManager {
     // ── Отправка ──────────────────────────────────────────────────────────────
 
     /// Unicast агенту по GUID.
-    /// `Reconnecting` → пакет буферизуется.
-    /// `Online` → пакет идёт напрямую.
+    /// Если агент переподключается — пакет буферизуется.
     pub async fn send_to_agent(&self, guid: ObjectGuid, packet: ServerPacket) {
-        // Разбираемся с состоянием без удержания RefMut через await.
         let session_id = {
             let Some(mut entry) = self.agents.get_mut(&guid) else {
                 tracing::warn!(?guid, "send_to_agent: unknown agent");
                 return;
             };
-            match entry.value_mut() {
-                AgentState::Online { session_id } => *session_id,
-                AgentState::Reconnecting { buffer, .. } => {
-                    if buffer.len() < self.config.buffer_cap {
-                        buffer.push_back(packet);
-                    } else {
-                        tracing::warn!(?guid, "Buffer full, packet dropped");
-                    }
-                    return; // пакет либо буферизован, либо дропнут
-                }
+            if entry.try_buffer(packet.clone(), self.config.buffer_cap) {
+                return;
             }
-        }; // ← RefMut упал здесь, можно await
+            entry.session_id()
+        };
 
-        self.send_to_session(session_id, packet).await;
-    }
-
-    /// Multicast: одному пакету — несколько получателей.
-    pub async fn send_to_agents(&self, guids: &[ObjectGuid], packet: ServerPacket) {
-        for &guid in guids {
-            self.send_to_agent(guid, packet.clone()).await;
+        if let Some(id) = session_id {
+            self.send_to_session(id, packet).await;
         }
     }
 
-    /// Низкоуровневая отправка по session_id.
-    /// При мёртвом канале — сессия чистится автоматически.
-    pub async fn send_to_session(&self, session_id: u64, packet: ServerPacket) {
-        let tx = self.sessions.get(&session_id).map(|e| e.tx.clone());
-        if let Some(tx) = tx
-            && tx.send(packet).await.is_err()
-        {
-            tracing::warn!(session_id, "Dead channel — removing session");
-            self.remove_session(session_id);
+    /// Multicast: один пакет — несколько получателей.
+    pub async fn send_to_agents(&self, guids: &[ObjectGuid], packet: ServerPacket) {
+        for &guid in guids {
+            self.send_to_agent(guid, packet.clone()).await;
         }
     }
 
@@ -241,6 +283,18 @@ impl ConnectionManager {
             if tx.send(packet.clone()).await.is_err() {
                 self.remove_session(session_id);
             }
+        }
+    }
+
+    /// Низкоуровневая отправка по session_id.
+    /// При мёртвом канале сессия чистится автоматически.
+    pub async fn send_to_session(&self, session_id: u64, packet: ServerPacket) {
+        let tx = self.sessions.get(&session_id).map(|e| e.tx.clone());
+        if let Some(tx) = tx
+            && tx.send(packet).await.is_err()
+        {
+            tracing::warn!(session_id, "Dead channel — removing session");
+            self.remove_session(session_id);
         }
     }
 
@@ -266,39 +320,26 @@ impl ConnectionManager {
 
     // ── Внутренние ────────────────────────────────────────────────────────────
 
-    fn begin_reconnect(&self, guid: ObjectGuid, session_id: u64) {
+    fn begin_reconnect_window(&self, guid: ObjectGuid, session_id: u64) {
         let is_owner = self
             .agents
             .get(&guid)
-            .map(|e| matches!(e.value(), AgentState::Online { session_id: sid } if *sid == session_id))
+            .map(|e| e.session_id() == Some(session_id))
             .unwrap_or(false);
 
         if is_owner {
-            let deadline = Instant::now() + self.config.reconnect_window;
-            self.agents.insert(
-                guid,
-                AgentState::Reconnecting {
-                    deadline,
-                    buffer: VecDeque::new(),
-                },
-            );
-            tracing::info!(
-                ?guid, session_id,
-                window = ?self.config.reconnect_window,
-                "Reconnect window started"
-            );
+            self.agents
+                .insert(guid, AgentState::reconnecting(self.config.reconnect_window));
+            tracing::info!(?guid, session_id, window = ?self.config.reconnect_window, "Reconnect window started");
         }
     }
 
     fn cleanup_expired(&self) {
-        let now = Instant::now();
         let expired: Vec<ObjectGuid> = self
             .agents
             .iter()
-            .filter_map(|e| match e.value() {
-                AgentState::Reconnecting { deadline, .. } if now > *deadline => Some(*e.key()),
-                _ => None,
-            })
+            .filter(|e| e.value().is_expired())
+            .map(|e| *e.key())
             .collect();
 
         for guid in &expired {

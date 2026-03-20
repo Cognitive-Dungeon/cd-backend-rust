@@ -44,4 +44,8 @@ impl Session {
     pub async fn require_guid(&self) -> NetResult<ObjectGuid> {
         self.get_guid().await.ok_or(NetError::Unauthorized)
     }
+
+    pub async fn on_disconnect(&self) {
+        self.manager.remove_session(self.id);
+    }
 }

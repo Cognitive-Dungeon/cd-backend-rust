@@ -1,44 +1,72 @@
-use axum::{
-    extract::State,
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    response::IntoResponse,
-};
+use axum::extract::State;
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::response::IntoResponse;
 use cd_telemetry::EngineEvent;
-use futures::{sink::SinkExt, stream::StreamExt};
+use futures::{SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tracing::info;
 
-pub type TelemetryState = Arc<broadcast::Sender<EngineEvent>>;
+pub type TelemetryBus = Arc<broadcast::Sender<EngineEvent>>;
 
-pub async fn telemetry_ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<TelemetryState>,
-) -> impl IntoResponse {
-    ws.on_upgrade(|socket| handle_telemetry_socket(socket, state))
+/// Соединение SDK-клиента, который слушает события движка в реальном времени.
+///
+/// Только исходящий поток: клиент ничего не отправляет, только получает.
+pub struct TelemetryConnection {
+    /// Подписка на события движка
+    events: broadcast::Receiver<EngineEvent>,
 }
 
-async fn handle_telemetry_socket(socket: WebSocket, tx: TelemetryState) {
-    let mut rx = tx.subscribe();
-    let (mut sender, mut receiver) = socket.split();
+impl TelemetryConnection {
+    pub fn subscribe(bus: &TelemetryBus) -> Self {
+        Self {
+            events: bus.subscribe(),
+        }
+    }
 
-    info!("SDK connected to /telemetry");
+    /// Запускает жизненный цикл до отключения клиента.
+    pub async fn run(self, socket: WebSocket) {
+        let (ws_outgoing, ws_incoming) = socket.split();
 
-    let send_task = tokio::spawn(async move {
-        while let Ok(event) = rx.recv().await {
-            let json = match serde_json::to_string(&event) {
-                Ok(s) => s,
-                Err(_) => continue,
+        // Поток 1: пересылаем события движка клиенту
+        let send_task = tokio::spawn(Self::forward_events(self.events, ws_outgoing));
+
+        // Поток 2 (основной): ждём закрытия со стороны клиента
+        Self::wait_for_disconnect(ws_incoming).await;
+
+        send_task.abort();
+        tracing::info!("SDK disconnected from /telemetry");
+    }
+
+    /// Сериализует события движка и шлёт их клиенту.
+    async fn forward_events(
+        mut events: broadcast::Receiver<EngineEvent>,
+        mut ws_outgoing: impl SinkExt<Message, Error = axum::Error> + Unpin,
+    ) {
+        tracing::info!("SDK connected to /telemetry");
+        while let Ok(event) = events.recv().await {
+            let Ok(json) = serde_json::to_string(&event) else {
+                continue;
             };
-            if sender.send(Message::Text(json.into())).await.is_err() {
+            if ws_outgoing.send(Message::Text(json.into())).await.is_err() {
                 break;
             }
         }
-    });
+    }
 
-    // Ждём закрытия соединения со стороны клиента
-    while let Some(Ok(_)) = receiver.next().await {}
+    /// Держит соединение открытым пока клиент не закроет его со своей стороны.
+    async fn wait_for_disconnect(
+        mut ws_incoming: impl StreamExt<Item = Result<Message, axum::Error>> + Unpin,
+    ) {
+        while let Some(Ok(_)) = ws_incoming.next().await {}
+    }
+}
 
-    send_task.abort();
-    info!("SDK disconnected from /telemetry");
+/// Axum-хэндлер: апгрейдит HTTP → WebSocket и запускает TelemetryConnection.
+pub async fn telemetry_ws_handler(
+    ws: WebSocketUpgrade,
+    State(bus): State<TelemetryBus>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| async move {
+        TelemetryConnection::subscribe(&bus).run(socket).await;
+    })
 }

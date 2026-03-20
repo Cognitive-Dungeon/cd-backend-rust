@@ -1,9 +1,9 @@
-// crates/cd-net/src/server.rs
-use crate::api::{ReloadCallback, SharedApiState, handler_get_state, handler_reload_data};
+use crate::api::{self, ReloadCallback, SharedApiState};
+use crate::connection::Connection;
 use crate::manager::{ConnectionManager, SharedManager};
 use crate::protocol::{ClientPacket, OutboundMessage, ServerPacket};
 use crate::session::Session;
-use crate::telemetry::{TelemetryState, telemetry_ws_handler};
+use crate::telemetry::{TelemetryBus, telemetry_ws_handler};
 use axum::{
     Router,
     extract::State,
@@ -47,16 +47,16 @@ pub async fn run_server(
         router,
     });
 
-    let telemetry_state: TelemetryState = Arc::new(telemetry_tx);
+    let telemetry_bus: TelemetryBus = Arc::new(telemetry_tx);
 
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .with_state(app_state)
         .route("/telemetry", get(telemetry_ws_handler))
-        .with_state(telemetry_state)
-        .route("/api/state", get(handler_get_state))
+        .with_state(telemetry_bus)
+        .route("/api/state", get(api::handlers::get_state))
         .with_state(api_state)
-        .route("/api/reload-data", post(handler_reload_data))
+        .route("/api/reload-data", post(api::handlers::reload_data))
         .with_state(reload_cb);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
@@ -94,7 +94,11 @@ pub async fn run_server(
 }
 
 async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    ws.on_upgrade(|socket| handle_socket(socket, state))
+    ws.on_upgrade(|socket| async move {
+        let session_id = NEXT_SESSION_ID.fetch_add(1, Ordering::Relaxed);
+        let conn = Connection::accept(session_id, state.manager.clone());
+        conn.run(socket, &state.router).await;
+    })
 }
 
 async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
