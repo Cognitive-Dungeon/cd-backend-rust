@@ -1,6 +1,9 @@
 use bevy_ecs::prelude::*;
 use cd_common::Glyph;
-use cd_ecs::components::{Position, Render};
+use cd_ecs::{
+    Stats,
+    components::{Position, Render},
+};
 
 use crate::snapshot::{ChunkSnapshot, EntitySnapshot};
 use cd_engine::world::resources::{DefsCache, MapResource};
@@ -13,14 +16,16 @@ impl SnapshotBuilder {
     pub fn build_entities(world: &mut World) -> Vec<EntitySnapshot> {
         let mut snapshots = Vec::new();
         // Запрашиваем нужные компоненты
-        let mut query = world.query::<(&cd_ecs::Guid, &Position, &Render)>();
+        let mut query = world.query::<(&cd_ecs::Guid, &Position, &Render, &Stats)>();
 
-        for (guid, pos, render) in query.iter(world) {
+        for (guid, pos, render, stats) in query.iter(world) {
             snapshots.push(EntitySnapshot {
                 guid: Some(guid.0),
                 x: pos.0.x(),
                 y: pos.0.y(),
                 glyph: render.glyph,
+                hp: stats.hp,
+                max_hp: stats.max_hp,
             });
         }
 

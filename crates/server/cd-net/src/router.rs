@@ -22,6 +22,9 @@ impl Router {
             ClientPacket::Move { x, y } => {
                 handlers::game::handle_move(session, self.cmd_tx.clone(), x, y).await
             }
+            ClientPacket::Cast { spell } => {
+                handlers::game::handle_cast(session, self.cmd_tx.clone(), spell).await
+            }
         }
     }
 }

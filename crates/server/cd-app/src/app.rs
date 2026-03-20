@@ -2,7 +2,7 @@
 use anyhow::Result;
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
-use cd_net::protocol::{OutboundMessage, ServerPacket, TileView};
+use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
 use cd_net::snapshot::SnapshotBuilder;
 use cd_net::{ApiEntity, ApiState, ReloadCallback, SharedApiState};
 use std::sync::{Arc, Mutex, RwLock};
@@ -186,9 +186,11 @@ fn build_engine(
     // 2. Регистрация систем
     engine.add_system(cd_engine::systems::input::handle_input_system);
     engine.add_system(cd_engine::systems::movement::movement_system);
+    engine.add_system(cd_engine::systems::spell::spell_system);
 
     // 3. Генерация тестового мира
     engine.generate_test_world();
+    engine.spawn_test_mob();
 
     engine
 }
@@ -262,6 +264,8 @@ fn publish_state(
             y: snap.y,
             glyph: snap.glyph.to_char(),
             color: snap.glyph.hex_color(),
+            hp: snap.hp,
+            max_hp: snap.max_hp,
         })
         .collect();
 

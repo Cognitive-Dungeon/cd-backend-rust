@@ -417,6 +417,147 @@
                     ]
                 }
             }
+        },
+        {
+            "name": "Spells",
+            "description": "Лист с заклинаниями",
+            "displayColumn": "id",
+            "guid": "afeffc48-3238-4843-be98-1d7ace82fa7c",
+            "columns": [
+                {
+                    "typeStr": "text",
+                    "guid": "126b20a4-1294-4cc0-b4d5-b4b81dc7efd3",
+                    "name": "slug",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "48f26f6e-7d75-4471-9c46-afce6001815f",
+                    "name": "name",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "enum",
+                    "guid": "7c9d6c9b-7ad5-4d31-9167-19b684f423d3",
+                    "name": "target",
+                    "description": "new enum field",
+                    "options": "self, entity, object",
+                    "defaultValue": "self",
+                    "iconName": "newEnum",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text",
+                        "options": "text"
+                    }
+                },
+                {
+                    "typeStr": "int",
+                    "guid": "b991e7e3-f246-46e3-a60a-38824eef7041",
+                    "description": "int field",
+                    "name": "range",
+                    "min": 0,
+                    "max": 100000,
+                    "defaultValue": 0,
+                    "iconName": "newInt",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "min": "int",
+                        "max": "int",
+                        "defaultValue": "int"
+                    }
+                },
+                {
+                    "typeStr": "enum",
+                    "guid": "9aaff184-7c43-4a08-99a2-108931f6cb2e",
+                    "name": "effect_type",
+                    "description": "",
+                    "options": "damage, heal",
+                    "defaultValue": "damage",
+                    "iconName": "newEnum",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text",
+                        "options": "text"
+                    }
+                },
+                {
+                    "typeStr": "int",
+                    "guid": "fd784c3b-2a0c-4378-b1c8-a0216c4a15c7",
+                    "description": "int field",
+                    "name": "effect_amount",
+                    "min": 0,
+                    "max": 100000,
+                    "defaultValue": 0,
+                    "iconName": "newInt",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "min": "int",
+                        "max": "int",
+                        "defaultValue": "int"
+                    }
+                },
+                {
+                    "typeStr": "enum",
+                    "guid": "636795a8-8625-4bed-9bc7-79c47751abed",
+                    "name": "damage_type",
+                    "description": "new enum field",
+                    "options": "physical",
+                    "defaultValue": "physical",
+                    "iconName": "newEnum",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text",
+                        "options": "text"
+                    }
+                }
+            ],
+            "lines": [
+                {
+                    "guid": "e47e6400-b557-4cd4-afde-006f66b3e63a",
+                    "id": "0",
+                    "name": "Melee Attack",
+                    "target": "self",
+                    "range": 1,
+                    "effect_type": "damage",
+                    "effect_amount": 10,
+                    "damage_type": "physical",
+                    "slug": "melee_attack"
+                }
+            ],
+            "hidden": false,
+            "isProps": false,
+            "configurable": {
+                "name": "text",
+                "description": "text",
+                "displayColumn": "columnSelect@name",
+                "columnSelect@name@displayColumn": {
+                    "allowedTypes": [
+                        "int",
+                        "float",
+                        "text",
+                        "longtext"
+                    ]
+                }
+            }
         }
     ]
 }

@@ -11,10 +11,9 @@ pub enum InputCmd {
         target: WorldPos,
     },
     /// Игрок хочет скастовать спелл (заготовка на будущее)
-    Cast {
-        caster: ObjectGuid,
-        spell_id: u32,
-        target: ObjectGuid,
+    CastSpell {
+        entity_guid: ObjectGuid,
+        spell_slug: String,
     },
     SpawnPlayer {
         entity_guid: ObjectGuid,

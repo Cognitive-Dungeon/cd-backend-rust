@@ -18,3 +18,17 @@ pub async fn handle_move(session: Session, cmd_tx: CommandSender, x: i32, y: i32
 
     Ok(())
 }
+
+pub async fn handle_cast(session: Session, cmd_tx: CommandSender, spell: String) -> NetResult<()> {
+    let guid = session.require_guid().await?;
+
+    cmd_tx
+        .send(InputCmd::CastSpell {
+            entity_guid: guid,
+            spell_slug: spell,
+        })
+        .await
+        .map_err(|_| crate::error::NetError::EngineDead)?;
+
+    Ok(())
+}

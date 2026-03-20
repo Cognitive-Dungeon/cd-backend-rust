@@ -45,7 +45,7 @@ impl OutboundMessage {
 pub enum ClientPacket {
     Login { token: String },
     Move { x: i32, y: i32 },
-    // Cast { spell_id: u32, target_guid: String }
+    Cast { spell: String },
 }
 
 /// Сообщения от Сервера к Клиенту
@@ -82,6 +82,8 @@ pub struct EntityView {
     pub y: i32,
     pub glyph: char,
     pub color: String, // Hex
+    pub hp: i32,
+    pub max_hp: i32,
 }
 
 #[derive(Debug, Serialize, Clone)]

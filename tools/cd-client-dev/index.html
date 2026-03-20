@@ -86,6 +86,7 @@
         <div class="data-row"><span>Move</span> <span class="val">W, A, S, D</span></div>
         <div class="data-row"><span>Pan Camera</span> <span class="val">Arrows</span></div>
         <div class="data-row"><span>Center Cam</span> <span class="val">Space</span></div>
+        <div class="data-row"><span>Attack</span> <span class="val">F</span></div>
     </div>
 
     <div class="header">Network Log <button onclick="document.getElementById('net-log').innerHTML=''" style="float:right; font-size:10px; cursor:pointer;">Clear</button></div>
@@ -296,6 +297,10 @@
             });
         }
 
+        if (e.key === "f" || e.key === "F") {
+            sendPacket("Cast", { spell: "melee_attack" });
+        }
+
         // Управление камерой (локально)
         if (e.key === "ArrowUp") camera.y -= 1;
         if (e.key === "ArrowDown") camera.y += 1;
@@ -309,11 +314,14 @@
 
     // --- Utils ---
     function updateInspector(ent) {
+        const hp = ent.hp !== undefined 
+            ? `<div class="data-row"><span>HP:</span> <span class="val">${ent.hp} / ${ent.max_hp}</span></div>`
+            : '';
         const html = `
             <div class="data-row"><span>GUID:</span> <span class="val">${ent.guid}</span></div>
             <div class="data-row"><span>Position:</span> <span class="val">${ent.x}, ${ent.y}</span></div>
             <div class="data-row"><span>Glyph:</span> <span class="val" style="color:${ent.color}">${ent.glyph}</span></div>
-            <div class="data-row"><span>Color:</span> <span class="val">${ent.color}</span></div>
+        ${hp}
         `;
         document.getElementById("entity-info").innerHTML = html;
     }

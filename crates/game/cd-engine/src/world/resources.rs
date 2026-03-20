@@ -1,5 +1,8 @@
 use bevy_ecs::prelude::*;
-use cd_data::depot::Depot;
+use cd_data::{
+    defs::{SpellDef, SpellId},
+    depot::Depot,
+};
 use cd_ecs::SpatialGrid;
 use cd_map::WorldMap;
 use cd_telemetry::TelemetrySink;
@@ -50,6 +53,8 @@ pub struct DefsCache {
     pub creatures: HashMap<String, CreatureDef>,
     pub materials: HashMap<String, MaterialDef>,
     pub furniture: HashMap<String, FurnitureDef>,
+    pub spells_by_id: HashMap<SpellId, SpellDef>,
+    pub spells_by_slug: HashMap<String, SpellId>,
 }
 
 impl DefsCache {
@@ -73,6 +78,17 @@ impl DefsCache {
         if let Some(sheet) = depot.sheet("Furniture") {
             self.furniture = sheet.load_as_map();
             tracing::info!("Loaded {} furniture items", self.furniture.len());
+        }
+
+        if let Some(sheet) = depot.sheet("Spells") {
+            let defs = sheet.load_all::<SpellDef>();
+            self.spells_by_id.clear();
+            self.spells_by_slug.clear();
+            for def in defs {
+                self.spells_by_slug.insert(def.slug.clone(), def.id);
+                self.spells_by_id.insert(def.id, def);
+            }
+            tracing::info!("Loaded {} spells", self.spells_by_id.len());
         }
     }
 }

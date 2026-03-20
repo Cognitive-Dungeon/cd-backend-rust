@@ -1,7 +1,7 @@
-use crate::StampedCommand;
 use crate::input::InputCmd;
 use crate::systems::intents::IntentMove;
 use crate::world::resources::*;
+use crate::{StampedCommand, systems::intents::IntentCastSpell};
 use bevy_ecs::message::Messages;
 use bevy_ecs::prelude::*;
 use cd_data::depot::Depot;
@@ -27,7 +27,7 @@ impl Engine {
     pub(crate) fn from_builder(
         world_seed: u64,
         telemetry: Arc<dyn TelemetrySink>,
-        world_repo: Option<Arc<dyn cd_data::WorldRepository>>, // Пока игнорируем для простоты
+        world_repo: Option<Arc<dyn cd_data::WorldRepository>>,
         entity_repo: Option<Arc<dyn cd_data::EntityRepository>>,
         game_data: Arc<RwLock<Option<Depot>>>,
     ) -> Self {
@@ -50,6 +50,7 @@ impl Engine {
 
         world.init_resource::<Messages<InputCmd>>();
         world.init_resource::<Messages<IntentMove>>();
+        world.init_resource::<Messages<IntentCastSpell>>();
         world.init_resource::<DefsCache>();
 
         Self {

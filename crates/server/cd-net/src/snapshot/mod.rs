@@ -12,6 +12,8 @@ pub struct EntitySnapshot {
     pub x: i32,
     pub y: i32,
     pub glyph: Glyph,
+    pub hp: i32,
+    pub max_hp: i32,
 }
 
 /// Плоское представление чанка для передачи наружу (сеть/сохранения)

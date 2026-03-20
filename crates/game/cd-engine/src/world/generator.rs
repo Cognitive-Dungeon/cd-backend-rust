@@ -1,5 +1,7 @@
 use bevy_ecs::world::Mut;
-use cd_core::WorldPos;
+use cd_common::Glyph;
+use cd_core::{ObjectGuid, WorldPos};
+use cd_ecs::{Guid, Name, Position, Render, Stats};
 use cd_map::{Chunk, Tile};
 
 use crate::{
@@ -55,6 +57,41 @@ impl WorldGenerator {
         map.inner.put_chunk(WorldPos::new(0, 0, 0), chunk);
         tracing::info!("Test room generated using Depot materials!");
     }
+
+    /// Спавнит тестового моба прямо в ECS.
+    /// Временный метод — уберём когда появится нормальная система спавна.
+    pub fn spawn_test_mob(world: &mut bevy_ecs::world::World) {
+        let guid = ObjectGuid::new(1, 2, 1, 9999); // фиксированный тестовый guid
+        let pos = WorldPos::new(3, 3, 0); // внутри тестовой комнаты
+
+        let entity = world
+            .spawn((
+                Guid(guid),
+                Position(pos),
+                Name("Test Goblin".to_string()),
+                Render {
+                    glyph: Glyph::new(0x00FF00, b'g'),
+                },
+                Stats {
+                    hp: 30,
+                    max_hp: 30,
+                    mana: 0,
+                    max_mana: 0,
+                },
+            ))
+            .id();
+
+        if let Some(mut registry) =
+            world.get_resource_mut::<crate::world::resources::RegistryResource>()
+        {
+            registry.inner.register(guid, entity);
+        }
+        if let Some(mut grid) = world.get_resource_mut::<crate::world::resources::GridResource>() {
+            grid.inner.insert(guid, pos);
+        }
+
+        tracing::info!("Test goblin spawned at {:?}", pos);
+    }
 }
 
 impl Engine {
@@ -68,5 +105,9 @@ impl Engine {
                     .expect("DefsCache must be initialized before generate_test_world");
                 crate::world::generator::WorldGenerator::generate_test_room(&mut map, defs);
             });
+    }
+
+    pub fn spawn_test_mob(&mut self) {
+        crate::world::generator::WorldGenerator::spawn_test_mob(&mut self.world);
     }
 }
