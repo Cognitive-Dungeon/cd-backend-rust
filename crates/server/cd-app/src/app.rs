@@ -1,10 +1,8 @@
 // crates/cd-app/src/app.rs
 use anyhow::Result;
-use cd_core::{ObjectGuid, WorldPos};
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
-use cd_map::{Chunk, Tile, TileFlags};
-use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
+use cd_net::protocol::{OutboundMessage, ServerPacket, TileView};
 use cd_net::snapshot::SnapshotBuilder;
 use cd_net::{ApiEntity, ApiState, ReloadCallback, SharedApiState};
 use std::sync::{Arc, Mutex, RwLock};
@@ -12,7 +10,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use tokio::sync::{broadcast, oneshot};
 use tokio::task::JoinHandle as TokioJoinHandle;
-use tracing::{Level, error, info};
+use tracing::{Level, info};
 
 /// Главная структура приложения, которая управляет его жизненным циклом.
 pub struct Application {
@@ -99,18 +97,30 @@ impl ApplicationBuilder {
         };
 
         // --- 4. ЗАПУСК ДВИЖКА (Изолированный поток ОС) ---
-        let engine_thread = spawn_engine_thread(
-            engine_stop_rx,
-            cmd_bus,
-            outbound_tx.clone(),
-            Arc::new(telemetry_sink),
-            world_repo,
-            entity_repo,
-            game_data.clone(),
-            api_state.clone(),
-            depot_path,
-            Duration::from_millis(self.tick_rate_ms),
-        );
+        let engine_thread = {
+            let game_data = game_data.clone();
+            let outbound_tx = outbound_tx.clone();
+            let api_state = api_state.clone();
+            let depot_path = depot_path.clone();
+
+            std::thread::spawn(move || {
+                let engine = build_engine(
+                    Arc::new(telemetry_sink),
+                    world_repo,
+                    entity_repo,
+                    game_data,
+                    &depot_path,
+                );
+                run_engine_loop(
+                    engine,
+                    engine_stop_rx,
+                    cmd_bus,
+                    outbound_tx,
+                    api_state,
+                    Duration::from_millis(self.tick_rate_ms),
+                );
+            })
+        };
 
         // --- 5. ЗАПУСК СЕТИ (Пул асинхронных задач) ---
         let network_task = tokio::spawn(cd_net::run_server(
@@ -142,82 +152,74 @@ pub async fn run() -> Result<()> {
 // = ИЗОЛИРОВАННЫЙ ПОТОК ДВИЖКА
 // =============================================================================
 
-fn spawn_engine_thread(
-    mut stop_rx: oneshot::Receiver<()>,
-    mut cmd_bus: CommandBus,
-    outbound_rx: broadcast::Sender<cd_net::protocol::OutboundMessage>,
+/// Инициализация движка: загрузка данных, регистрация систем, генерация мира.
+fn build_engine(
     telemetry_sink: Arc<BroadcastSink>,
     world_repo: Arc<JsonWorldRepository>,
     entity_repo: Arc<JsonEntityRepository>,
     game_data: Arc<RwLock<Option<cd_engine::Depot>>>,
+    depot_path: &std::path::Path,
+) -> Engine {
+    let mut engine = EngineBuilder::new()
+        .telemetry(telemetry_sink)
+        .world_repo(world_repo)
+        .entity_repo(entity_repo)
+        .world_seed(0xDEAD_CAFE_BABE_1337)
+        .game_data(game_data.clone())
+        .build();
+
+    // 1. Загрузка Depot
+    tracing::info!("Trying to load Depot from {:?}", depot_path);
+    if depot_path.exists() {
+        match cd_engine::Depot::load(depot_path) {
+            Ok(depot) => {
+                *game_data.write().unwrap() = Some(depot);
+                engine.rebuild_cache();
+                tracing::info!("Depot loaded and cache rebuilt successfully!");
+            }
+            Err(e) => tracing::error!("Failed to parse game.cdb: {}", e),
+        }
+    } else {
+        tracing::error!("Depot file NOT FOUND at {:?}", depot_path);
+    }
+
+    // 2. Регистрация систем
+    engine.add_system(cd_engine::systems::input::handle_input_system);
+    engine.add_system(cd_engine::systems::movement::movement_system);
+
+    // 3. Генерация тестового мира
+    engine.generate_test_world();
+
+    engine
+}
+
+/// Игровой цикл: тикает движок, публикует состояние, слушает сигнал остановки.
+fn run_engine_loop(
+    mut engine: Engine,
+    mut stop_rx: oneshot::Receiver<()>,
+    mut cmd_bus: CommandBus,
+    outbound_tx: broadcast::Sender<OutboundMessage>,
     api_state: SharedApiState,
-    depot_path: std::path::PathBuf,
     tick_rate: Duration,
-) -> JoinHandle<()> {
-    std::thread::spawn(move || {
-        let mut engine = EngineBuilder::new()
-            .telemetry(telemetry_sink)
-            .world_repo(world_repo)
-            .entity_repo(entity_repo)
-            .world_seed(0xDEAD_CAFE_BABE_1337)
-            .game_data(game_data.clone())
-            .build();
-
-        // 1. Загрузка стартовых данных
-        tracing::info!("Trying to load Depot from {:?}", depot_path);
-        if depot_path.exists() {
-            match cd_engine::Depot::load(&depot_path) {
-                Ok(depot) => {
-                    *game_data.write().unwrap() = Some(depot);
-                    engine.rebuild_cache();
-                    tracing::info!("Depot loaded and cache rebuilt successfully!");
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse game.cdb: {}", e);
-                }
-            }
-        } else {
-            tracing::error!("Depot file NOT FOUND at {:?}", depot_path);
+) {
+    loop {
+        if stop_rx.try_recv().is_ok() {
+            break;
         }
 
-        // 2. Регистрация систем и генерация тестового мира
-        engine.add_system(cd_engine::systems::input::handle_input_system);
-        engine.add_system(cd_engine::systems::movement::movement_system);
+        let start = Instant::now();
 
-        engine.world.resource_scope(
-            |world, mut map: bevy_ecs::prelude::Mut<cd_engine::world::resources::MapResource>| {
-                let defs = world
-                    .get_resource::<cd_engine::world::resources::DefsCache>()
-                    .unwrap();
-                cd_engine::world::generator::WorldGenerator::generate_test_room(&mut map, defs);
-            },
-        );
+        engine.tick(cmd_bus.drain_sorted());
+        publish_state(&mut engine, &api_state, &outbound_tx);
 
-        // 3. Главный игровой цикл (Game Loop)
-        loop {
-            if stop_rx.try_recv().is_ok() {
-                break;
-            }
-
-            let start = Instant::now();
-
-            // Шаг А: Движок съедает команды и обновляет мир
-            engine.tick(cmd_bus.drain_sorted());
-
-            // Шаг Б: Транслятор (Адаптер) отправляет слепок мира в Сеть
-            // В будущем мы перенесем этот вызов внутрь engine.tick()
-            publish_state(&mut engine, &api_state, &outbound_rx);
-
-            // Шаг В: Сон до начала следующего тика
-            let elapsed = start.elapsed();
-            if elapsed < tick_rate {
-                std::thread::sleep(tick_rate - elapsed);
-            }
+        let elapsed = start.elapsed();
+        if elapsed < tick_rate {
+            std::thread::sleep(tick_rate - elapsed);
         }
+    }
 
-        engine.shutdown();
-        info!("Engine thread finished.");
-    })
+    engine.shutdown();
+    info!("Engine thread finished.");
 }
 
 // -----------------------------------------------------------------------------
@@ -295,23 +297,6 @@ fn publish_state(
 
         let _ = outbound_tx.send(OutboundMessage::broadcast(chunk_packet));
     }
-}
-
-// -----------------------------------------------------------------------------
-// - ТЕСТОВЫЕ ДАННЫЕ
-// -----------------------------------------------------------------------------
-fn setup_initial_world(engine: &mut Engine) {
-    let mut chunk = Chunk::new();
-    chunk.set_tile(
-        5,
-        5,
-        Tile {
-            material: 1,
-            flags: TileFlags::SOLID,
-            variant: 0,
-        },
-    );
-    engine.load_chunk(0, 0, chunk);
 }
 
 // -----------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 pub mod builder;
 pub mod engine;
+pub mod persistence;
 pub mod tick;
 
 pub use builder::EngineBuilder;

@@ -1,7 +1,11 @@
+use bevy_ecs::world::Mut;
 use cd_core::WorldPos;
 use cd_map::{Chunk, Tile};
 
-use crate::world::resources::{DefsCache, MapResource};
+use crate::{
+    Engine,
+    world::resources::{DefsCache, MapResource},
+};
 
 pub struct WorldGenerator;
 
@@ -50,5 +54,19 @@ impl WorldGenerator {
         // 4. Сохраняем чанк в карту
         map.inner.put_chunk(WorldPos::new(0, 0, 0), chunk);
         tracing::info!("Test room generated using Depot materials!");
+    }
+}
+
+impl Engine {
+    /// Генерирует тестовый мир. Временный метод — уберём когда появится
+    /// нормальная система загрузки/генерации карт.
+    pub fn generate_test_world(&mut self) {
+        self.world
+            .resource_scope(|world, mut map: Mut<MapResource>| {
+                let defs = world
+                    .get_resource::<DefsCache>()
+                    .expect("DefsCache must be initialized before generate_test_world");
+                crate::world::generator::WorldGenerator::generate_test_room(&mut map, defs);
+            });
     }
 }
