@@ -1,5 +1,6 @@
 use crate::StampedCommand;
 use crate::input::InputCmd;
+use crate::systems::intents::IntentMove;
 use crate::world::resources::*;
 use bevy_ecs::message::Messages;
 use bevy_ecs::prelude::*;
@@ -48,6 +49,7 @@ impl Engine {
         world.insert_resource(TelemetryResource(Arc::clone(&telemetry)));
 
         world.init_resource::<Messages<InputCmd>>();
+        world.init_resource::<Messages<IntentMove>>();
 
         Self {
             world,

@@ -177,7 +177,7 @@ fn spawn_engine_thread(
 
         // 2. Регистрация систем и генерация тестового мира
         engine.add_system(cd_engine::systems::input::handle_input_system);
-        engine.add_system(cd_engine::systems::movement::run);
+        engine.add_system(cd_engine::systems::movement::movement_system);
         setup_initial_world(&mut engine);
 
         // 3. Главный игровой цикл (Game Loop)

@@ -8,6 +8,7 @@ use cd_telemetry::EngineEvent;
 
 use crate::{
     input::InputCmd,
+    systems::intents::IntentMove,
     world::resources::{
         GridResource, MapResource, RegistryResource, TelemetryResource, TickResource,
     },
@@ -16,9 +17,9 @@ use crate::{
 pub fn handle_input_system(
     mut reader: MessageReader<InputCmd>, // <--- Читаем буфер сообщений
     mut commands: Commands,              // <--- Для спавна новых сущностей
+    mut intent_move_writer: MessageWriter<IntentMove>,
     mut registry: ResMut<RegistryResource>,
     mut grid: ResMut<GridResource>,
-    map: Res<MapResource>,
     telemetry: Res<TelemetryResource>,
     tick: Res<TickResource>,
     mut positions: Query<&mut Position>, // <--- Запрашиваем только позиции
@@ -67,21 +68,11 @@ pub fn handle_input_system(
                 entity_guid,
                 target,
             } => {
-                let entity_opt = registry.inner.get_entity(*entity_guid);
-
-                if let Some(entity) = entity_opt {
-                    if !map.inner.is_solid_fast(*target) {
-                        // Пытаемся получить компонент Position у этой сущности
-                        if let Ok(mut pos) = positions.get_mut(entity) {
-                            let old_pos = pos.0;
-                            pos.0 = *target;
-
-                            grid.inner.move_entity(*entity_guid, old_pos, *target);
-                            tracing::info!("Entity {} moved to {:?}", entity_guid, target);
-                        }
-                    } else {
-                        tracing::warn!("Entity {} hit a wall at {:?}", entity_guid, target);
-                    }
+                if let Some(entity) = registry.inner.get_entity(*entity_guid) {
+                    intent_move_writer.write(IntentMove {
+                        entity,
+                        target: *target,
+                    });
                 }
             }
 
