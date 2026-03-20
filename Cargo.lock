@@ -530,6 +530,7 @@ dependencies = [
  "bitflags 2.11.0",
  "cd-core",
  "criterion",
+ "dashmap",
  "rand",
  "serde",
  "serde-big-array",

@@ -1,20 +1,24 @@
-use std::sync::RwLock;
-use ahash::{HashMap, HashMapExt};
+use crate::region::Region;
+use crate::shard::Shard;
+use crate::{Chunk, REGION_MASK, SHARD_COUNT, Tile};
 use cd_core::WorldPos;
-use crate::region::{Region};
-use crate::shard::{Shard};
-use crate::{Chunk, Tile, REGION_MASK, SHARD_COUNT};
+use dashmap::DashMap;
 
 pub struct WorldMap {
     // Статический слой: Регионы
-    // Используем RwLock для загрузки/выгрузки регионов
-    regions: RwLock<HashMap<WorldPos, Region>>,
+    regions: DashMap<WorldPos, Region>,
 
     // Динамический слой: Шарды
     // Массив фиксированного размера
     shards: Box<[Shard; SHARD_COUNT]>,
 
     default_tile: Tile,
+}
+
+impl Default for WorldMap {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl WorldMap {
@@ -26,7 +30,7 @@ impl WorldMap {
         let shards = shards_vec.try_into().ok().expect("Failed to init shards");
 
         Self {
-            regions: RwLock::new(HashMap::new()),
+            regions: DashMap::new(),
             shards: Box::new(shards),
             default_tile: Tile::default(),
         }
@@ -45,7 +49,8 @@ impl WorldMap {
         }
 
         // 2. Static Layer
-        self.get_static_tile(chunk_key, lx, ly).unwrap_or(self.default_tile)
+        self.get_static_tile(chunk_key, lx, ly)
+            .unwrap_or(self.default_tile)
     }
 
     pub fn is_solid_fast(&self, pos: WorldPos) -> bool {
@@ -65,16 +70,19 @@ impl WorldMap {
             return val;
         }
 
-        let regions = self.regions.read().unwrap();
         let region_key = chunk_key.region_key();
 
-        if let Some(region) = regions.get(&region_key) {
+        if let Some(region) = self.regions.get(&region_key) {
             let (cx, cy, _) = chunk_key.xyz();
             let rx = (cx & REGION_MASK) as usize;
             let ry = (cy & REGION_MASK) as usize;
 
             if let Some(chunk) = region.get_chunk(rx, ry) {
-                return if check_opaque { chunk.is_opaque_local(lx, ly) } else { chunk.is_solid_local(lx, ly) };
+                return if check_opaque {
+                    chunk.is_opaque_local(lx, ly)
+                } else {
+                    chunk.is_solid_local(lx, ly)
+                };
             }
         }
         false
@@ -85,17 +93,16 @@ impl WorldMap {
         let (lx, ly) = pos.local_coords();
         let shard = &self.shards[chunk_key.shard_index()];
 
-        let regions_guard = self.regions.read().unwrap();
         let region_key = chunk_key.region_key();
         // Получаем Snapshot базы для инициализации масок в дельте
-        let base_chunk = regions_guard.get(&region_key).and_then(|r| {
+        let base_chunk = self.regions.get(&region_key).and_then(|r| {
             let (cx, cy, _) = chunk_key.xyz();
             let rx = (cx & REGION_MASK) as usize;
             let ry = (cy & REGION_MASK) as usize;
-            r.get_chunk(rx, ry)
+            r.get_chunk(rx, ry).cloned() // <- Лучше склонировать базовый чанк для инициализации дельты, чтобы не держать лок DashMap
         });
 
-        shard.set_tile(chunk_key, lx, ly, tile, base_chunk);
+        shard.set_tile(chunk_key, lx, ly, tile, base_chunk.as_ref());
     }
 
     pub fn put_chunk(&self, chunk_key: WorldPos, chunk: Chunk) {
@@ -104,8 +111,7 @@ impl WorldMap {
         let rx = (cx & REGION_MASK) as usize;
         let ry = (cy & REGION_MASK) as usize;
 
-        let mut regions = self.regions.write().unwrap();
-        let region = regions.entry(region_key).or_insert_with(Region::new);
+        let mut region = self.regions.entry(region_key).or_insert_with(Region::new);
         let dest_chunk = region.get_or_create_chunk(rx, ry);
         *dest_chunk = chunk;
     }
@@ -113,10 +119,9 @@ impl WorldMap {
     // --- Private Helpers ---
 
     fn get_static_tile(&self, chunk_key: WorldPos, lx: usize, ly: usize) -> Option<Tile> {
-        let regions = self.regions.read().unwrap();
         let region_key = chunk_key.region_key();
 
-        if let Some(region) = regions.get(&region_key) {
+        if let Some(region) = self.regions.get(&region_key) {
             let (cx, cy, _) = chunk_key.xyz();
             let rx = (cx & REGION_MASK) as usize;
             let ry = (cy & REGION_MASK) as usize;
@@ -130,16 +135,24 @@ impl WorldMap {
 
 #[cfg(test)]
 mod tests {
-    use crate::TileFlags;
     use super::*;
+    use crate::TileFlags;
 
     #[test]
     fn test_world_layers_integration() {
         let world = WorldMap::new();
         let pos = WorldPos::new(10, 10, 0);
 
-        let t_static = Tile { material: 1, flags: TileFlags::SOLID, variant: 0 }; // Стена
-        let t_dynamic = Tile { material: 2, flags: TileFlags::LIQUID, variant: 0 }; // Вода (разлили поверх)
+        let t_static = Tile {
+            material: 1,
+            flags: TileFlags::SOLID,
+            variant: 0,
+        }; // Стена
+        let t_dynamic = Tile {
+            material: 2,
+            flags: TileFlags::LIQUID,
+            variant: 0,
+        }; // Вода (разлили поверх)
 
         // 1. Загружаем статический чанк
         let mut chunk = Chunk::new();
@@ -176,7 +189,13 @@ mod tests {
             let w = world.clone();
             handles.push(thread::spawn(move || {
                 let p = WorldPos::new(i, 0, 0);
-                w.set_tile(p, Tile { material: 1, ..Default::default() });
+                w.set_tile(
+                    p,
+                    Tile {
+                        material: 1,
+                        ..Default::default()
+                    },
+                );
                 w.get_tile(p);
             }));
         }
