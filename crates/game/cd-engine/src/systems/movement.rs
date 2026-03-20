@@ -28,7 +28,7 @@ pub fn movement_system(
 
             // ПРАВИЛО 2: Коллизия с картой
             if map.inner.is_solid_fast(intent.target) {
-                tracing::warn!("{} уперся в стену!", name.0);
+                tracing::warn!("{} hit a solid object", name.0);
                 continue;
             }
 
@@ -37,7 +37,7 @@ pub fn movement_system(
             pos.0 = intent.target;
             grid.inner.move_entity(guid.0, old_pos, intent.target);
 
-            tracing::info!("{} шагнул на {:?}", name.0, intent.target);
+            tracing::info!("{} moved to {:?}", name.0, intent.target);
         }
     }
 }

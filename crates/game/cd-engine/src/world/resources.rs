@@ -2,7 +2,12 @@ use bevy_ecs::prelude::*;
 use cd_data::depot::Depot;
 use cd_map::{SpatialGrid, WorldMap};
 use cd_telemetry::TelemetrySink;
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+
+use crate::world::defs::{CreatureDef, FurnitureDef, MaterialDef};
 
 /// Обертка над картой мира для ECS
 #[derive(Resource)]
@@ -38,3 +43,35 @@ pub struct TickResource {
 
 #[derive(Resource)]
 pub struct TelemetryResource(pub Arc<dyn TelemetrySink>);
+
+#[derive(Resource, Default)]
+pub struct DefsCache {
+    pub creatures: HashMap<String, CreatureDef>,
+    pub materials: HashMap<String, MaterialDef>,
+    pub furniture: HashMap<String, FurnitureDef>,
+}
+
+impl DefsCache {
+    /// Заполняет кэш из распарсенного Depot
+    pub fn rebuild_from(&mut self, depot: &cd_data::depot::Depot) {
+        if let Some(sheet) = depot.sheet("Creatures") {
+            self.creatures = sheet.load_as_map();
+            tracing::info!("Loaded {} creatures", self.creatures.len());
+        }
+
+        if let Some(sheet) = depot.sheet("Materials") {
+            // Для Materials ключом сделаем slug
+            self.materials = sheet
+                .load_all::<MaterialDef>()
+                .into_iter()
+                .map(|m| (m.slug.clone(), m))
+                .collect();
+            tracing::info!("Loaded {} materials", self.materials.len());
+        }
+
+        if let Some(sheet) = depot.sheet("Furniture") {
+            self.furniture = sheet.load_as_map();
+            tracing::info!("Loaded {} furniture items", self.furniture.len());
+        }
+    }
+}

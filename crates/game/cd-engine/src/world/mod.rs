@@ -1,3 +1,4 @@
+mod defs;
 pub mod registry;
 pub mod resources;
 pub mod snapshot;

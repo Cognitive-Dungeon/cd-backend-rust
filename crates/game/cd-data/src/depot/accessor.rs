@@ -8,7 +8,7 @@ use serde_json::Value;
 /// let flying = depot.sheet("Creatures")?.line("Dragon")?.bool("Flying");
 /// ```
 pub struct LineAccessor<'a> {
-    pub(crate) data: &'a Value,
+    pub data: &'a Value,
 }
 
 impl<'a> LineAccessor<'a> {

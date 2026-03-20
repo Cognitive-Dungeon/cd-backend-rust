@@ -64,7 +64,7 @@ impl ApplicationBuilder {
     pub fn build(self) -> Result<Application> {
         // --- 1. ТРУБЫ (Каналы связи) ---
         // Команды от Сети -> в Движок
-        let (mut cmd_bus, cmd_sender) = CommandBus::new(1024);
+        let (cmd_bus, cmd_sender) = CommandBus::new(1024);
 
         // Сообщения от Движка -> в Сеть
         let (outbound_tx, _) = broadcast::channel::<cd_net::protocol::OutboundMessage>(16);
@@ -159,21 +159,25 @@ fn spawn_engine_thread(
             .world_repo(world_repo)
             .entity_repo(entity_repo)
             .world_seed(0xDEAD_CAFE_BABE_1337)
+            .game_data(game_data.clone())
             .build();
 
         // 1. Загрузка стартовых данных
-        if depot_path.exists()
-            && let Ok(depot) = cd_engine::Depot::load(&depot_path)
-        {
-            *game_data.write().unwrap() = Some(depot);
-        }
-
-        let game_data_watcher = game_data.clone();
-        let _watcher = cd_engine::watcher::spawn_depot_watcher(depot_path, move |path| {
-            if let Ok(depot) = cd_engine::Depot::load(path) {
-                *game_data_watcher.write().unwrap() = Some(depot);
+        tracing::info!("Trying to load Depot from {:?}", depot_path);
+        if depot_path.exists() {
+            match cd_engine::Depot::load(&depot_path) {
+                Ok(depot) => {
+                    *game_data.write().unwrap() = Some(depot);
+                    engine.rebuild_cache();
+                    tracing::info!("Depot loaded and cache rebuilt successfully!");
+                }
+                Err(e) => {
+                    tracing::error!("Failed to parse game.cdb: {}", e);
+                }
             }
-        });
+        } else {
+            tracing::error!("Depot file NOT FOUND at {:?}", depot_path);
+        }
 
         // 2. Регистрация систем и генерация тестового мира
         engine.add_system(cd_engine::systems::input::handle_input_system);

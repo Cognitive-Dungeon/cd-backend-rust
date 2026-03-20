@@ -1,0 +1,422 @@
+{
+    "sheets": [
+        {
+            "name": "Materials",
+            "description": "Статические тайлы карты (Террейн)",
+            "displayColumn": "id",
+            "guid": "371ebe07-e497-43fe-aeb7-03b7fdc4d78b",
+            "columns": [
+                {
+                    "typeStr": "text",
+                    "guid": "9b0965e5-f165-4a57-b931-5129509c05ec",
+                    "name": "slug",
+                    "description": "Строковый ID",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "18837ed0-4ce9-4a60-945f-206274dece77",
+                    "name": "name",
+                    "description": "Название",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "8c4ecb38-c349-44fd-879b-8b37df0a56c0",
+                    "name": "desc",
+                    "description": "Описание (В основном для LLM)",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "f999ec30-08eb-40f2-9ab2-c3869c72da6c",
+                    "name": "glyph",
+                    "description": "Символ (CP437 или \\u{0000})",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "color",
+                    "guid": "8f34c733-41b3-44bc-8e12-e96d8296d77e",
+                    "description": "Hex цвет",
+                    "name": "color",
+                    "defaultValue": "#ffffff",
+                    "iconName": "newColor",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "color"
+                    }
+                },
+                {
+                    "typeStr": "bool",
+                    "guid": "a94037ce-ea94-43ac-b25b-2ca11ade7a78",
+                    "description": "Блокирует движение?",
+                    "name": "is_solid",
+                    "defaultValue": false,
+                    "iconName": "newBool",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "bool"
+                    }
+                },
+                {
+                    "typeStr": "bool",
+                    "guid": "c5a030b0-1dad-4cee-8802-924c6b05f633",
+                    "description": "Блокирует свет/зрение?",
+                    "name": "is_opaque",
+                    "defaultValue": false,
+                    "iconName": "newBool",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "bool"
+                    }
+                }
+            ],
+            "lines": [
+                {
+                    "guid": "1a228486-586a-4e32-96e4-4f9f4bb4d0ac",
+                    "id": "0",
+                    "slug": "void",
+                    "name": "Пустота",
+                    "desc": "Абсолютное ничто",
+                    "glyph": " ",
+                    "color": "#000000",
+                    "is_solid": false,
+                    "is_opaque": false
+                },
+                {
+                    "guid": "735b13cb-b57f-4ceb-8e9f-229f52464077",
+                    "id": "1",
+                    "slug": "floor_stone",
+                    "name": "Каменный пол",
+                    "desc": "Холодный пол из грубых плит.",
+                    "glyph": ".",
+                    "color": "#ffffff",
+                    "is_solid": false,
+                    "is_opaque": false
+                },
+                {
+                    "guid": "24bb6f00-9cbf-4e59-8908-cc2bbf21fc81",
+                    "id": "2",
+                    "slug": "wall_stone",
+                    "name": "Каменная стена",
+                    "desc": "Массивная кладка.",
+                    "glyph": "#",
+                    "color": "#ffffff",
+                    "is_solid": true,
+                    "is_opaque": true
+                }
+            ],
+            "hidden": false,
+            "isProps": false,
+            "configurable": {
+                "name": "text",
+                "description": "text",
+                "displayColumn": "columnSelect@name",
+                "columnSelect@name@displayColumn": {
+                    "allowedTypes": [
+                        "int",
+                        "float",
+                        "text",
+                        "longtext"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Creatures",
+            "description": "Характеристики существ",
+            "displayColumn": "id",
+            "guid": "60ba9238-69e2-47a3-ba39-05977ca79205",
+            "columns": [
+                {
+                    "typeStr": "text",
+                    "guid": "0e8dad9e-0bb9-462f-9b9e-48aa19653321",
+                    "name": "name",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "7900cdce-fd3e-4d53-b171-b0942de506b9",
+                    "name": "desc",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "1bf90e26-1555-44db-bf20-df226b5317dd",
+                    "name": "glyph",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "color",
+                    "guid": "4a30fe4f-725d-4182-bde7-dab783d257f2",
+                    "description": "Hex color field",
+                    "name": "color",
+                    "defaultValue": "#ffffff",
+                    "iconName": "newColor",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "color"
+                    }
+                },
+                {
+                    "typeStr": "int",
+                    "guid": "ad0d1648-b785-4421-9cc0-7fa7f188d3d0",
+                    "description": "int field",
+                    "name": "base_hp",
+                    "min": 0,
+                    "max": 100000,
+                    "defaultValue": 0,
+                    "iconName": "newInt",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "min": "int",
+                        "max": "int",
+                        "defaultValue": "int"
+                    }
+                },
+                {
+                    "typeStr": "int",
+                    "guid": "861ae93c-cb05-4991-972e-1e4ca7acedcc",
+                    "description": "int field",
+                    "name": "base_mp",
+                    "min": 0,
+                    "max": 100000,
+                    "defaultValue": 0,
+                    "iconName": "newInt",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "min": "int",
+                        "max": "int",
+                        "defaultValue": "int"
+                    }
+                },
+                {
+                    "typeStr": "int",
+                    "guid": "aa545183-bde5-4c7d-b3c6-07ef54174525",
+                    "description": "speed",
+                    "name": "speed",
+                    "min": -10000,
+                    "max": 100000,
+                    "defaultValue": 0,
+                    "iconName": "newInt",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "min": "int",
+                        "max": "int",
+                        "defaultValue": "int"
+                    }
+                }
+            ],
+            "lines": [
+                {
+                    "guid": "ca742138-fe87-4b7e-955a-3e4f86ba6f09",
+                    "id": "human",
+                    "name": "Человек",
+                    "desc": "Искатель приключений.",
+                    "glyph": "@",
+                    "color": "#228b22",
+                    "base_hp": 100,
+                    "base_mp": 100,
+                    "speed": 100
+                },
+                {
+                    "guid": "22412884-bd01-4f20-b0df-31a831ff7ba9",
+                    "id": "rat_sewer",
+                    "name": "Крыса",
+                    "desc": "Огромная канализационная крыса.",
+                    "glyph": "r",
+                    "color": "#8B4513",
+                    "base_hp": 15,
+                    "base_mp": 0,
+                    "speed": 120
+                },
+                {
+                    "guid": "edd4e038-6e10-494d-a5c0-38bf9df685a0",
+                    "id": "skeleton",
+                    "name": "Скелет",
+                    "desc": "Восставший из мертвых.",
+                    "glyph": "s",
+                    "color": "#EEEEEE",
+                    "base_hp": 40,
+                    "base_mp": 0,
+                    "speed": 80
+                }
+            ],
+            "hidden": false,
+            "isProps": false,
+            "configurable": {
+                "name": "text",
+                "description": "text",
+                "displayColumn": "columnSelect@name",
+                "columnSelect@name@displayColumn": {
+                    "allowedTypes": [
+                        "int",
+                        "float",
+                        "text",
+                        "longtext"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Furniture",
+            "description": "Интерактивные объекты поверх пола",
+            "displayColumn": "id",
+            "guid": "a52ec402-5237-4251-91dc-cc641672771d",
+            "columns": [
+                {
+                    "typeStr": "text",
+                    "guid": "876dbbc9-c8b3-4b7f-b07d-8d7a67d7ec8b",
+                    "name": "name",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
+                    "guid": "c45a19a5-0b9f-4f75-9837-ad94f7194409",
+                    "name": "glyph",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "color",
+                    "guid": "24bc666e-d871-475c-acfd-2a6d373e208e",
+                    "description": "Hex color field",
+                    "name": "color",
+                    "defaultValue": "#ffffff",
+                    "iconName": "newColor",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "color"
+                    }
+                },
+                {
+                    "typeStr": "bool",
+                    "guid": "83eeef1c-766f-407e-8f4a-631490dd417b",
+                    "description": "bool field",
+                    "name": "is_solid",
+                    "defaultValue": true,
+                    "iconName": "newBool",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "bool"
+                    }
+                },
+                {
+                    "typeStr": "bool",
+                    "guid": "55177ba1-7582-477c-a8da-c3301ea2b0d7",
+                    "description": "bool field",
+                    "name": "is_opaque",
+                    "defaultValue": true,
+                    "iconName": "newBool",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "bool"
+                    }
+                }
+            ],
+            "lines": [
+                {
+                    "guid": "71aba281-1c05-4261-a5a2-5cbfd34900e0",
+                    "id": "door_closed",
+                    "name": "Закрытая дверь",
+                    "glyph": "+",
+                    "is_solid": true,
+                    "is_opaque": true,
+                    "color": "#CD853F"
+                },
+                {
+                    "guid": "a8032a03-3287-40cc-8ee6-eea5d8fc4119",
+                    "id": "chest",
+                    "name": "Сундук",
+                    "glyph": "■",
+                    "is_solid": true,
+                    "is_opaque": false,
+                    "color": "#D2991E"
+                }
+            ],
+            "hidden": false,
+            "isProps": false,
+            "configurable": {
+                "name": "text",
+                "description": "text",
+                "displayColumn": "columnSelect@name",
+                "columnSelect@name@displayColumn": {
+                    "allowedTypes": [
+                        "int",
+                        "float",
+                        "text",
+                        "longtext"
+                    ]
+                }
+            }
+        }
+    ]
+}

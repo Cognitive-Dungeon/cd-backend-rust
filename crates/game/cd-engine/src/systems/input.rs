@@ -10,7 +10,7 @@ use crate::{
     input::InputCmd,
     systems::intents::IntentMove,
     world::resources::{
-        GridResource, MapResource, RegistryResource, TelemetryResource, TickResource,
+        DefsCache, GridResource, RegistryResource, TelemetryResource, TickResource,
     },
 };
 
@@ -19,6 +19,7 @@ pub fn handle_input_system(
     mut commands: Commands,              // <--- Для спавна новых сущностей
     mut intent_move_writer: MessageWriter<IntentMove>,
     mut registry: ResMut<RegistryResource>,
+    defs: Res<DefsCache>,
     mut grid: ResMut<GridResource>,
     telemetry: Res<TelemetryResource>,
     tick: Res<TickResource>,
@@ -30,20 +31,24 @@ pub fn handle_input_system(
             InputCmd::SpawnPlayer { entity_guid, name } => {
                 let pos = WorldPos::new(0, 0, 0);
 
+                let creature_id = "human"; // В будущем это будет браться из команды
+                let Some(def) = defs.creatures.get(creature_id) else {
+                    tracing::error!("Creature '{}' not found in Depot!", creature_id);
+                    continue; // Пропускаем спавн
+                };
+
                 // Спавним через Commands
                 let entity = commands
                     .spawn((
                         Guid(*entity_guid),
                         Position(pos),
                         Name(name.clone()),
-                        Render {
-                            glyph: cd_common::Glyph::new(0x00FF00, b'@'),
-                        },
+                        Render { glyph: def.glyph },
                         Stats {
-                            hp: 100,
-                            max_hp: 100,
-                            mana: 100,
-                            max_mana: 100,
+                            hp: def.base_hp,
+                            max_hp: def.base_hp,
+                            mana: def.base_mp,
+                            max_mana: def.base_mp,
                         },
                         Controller {
                             agent_id: "player".into(),

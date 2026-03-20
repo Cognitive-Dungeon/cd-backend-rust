@@ -32,14 +32,17 @@ impl Engine {
         telemetry: Arc<dyn TelemetrySink>,
         world_repo: Option<Arc<dyn cd_data::WorldRepository>>, // Пока игнорируем для простоты
         entity_repo: Option<Arc<dyn cd_data::EntityRepository>>,
+        game_data: Arc<RwLock<Option<Depot>>>,
     ) -> Self {
         let mut world = World::new();
-        let game_data = Arc::new(RwLock::new(None));
         world.insert_resource(MapResource {
             inner: WorldMap::new(),
         });
         world.insert_resource(GridResource {
             inner: SpatialGrid::new(),
+        });
+        world.insert_resource(GameDataResource {
+            depot: Arc::clone(&game_data),
         });
         world.insert_resource(RegistryResource::default());
         world.insert_resource(TickResource {
@@ -50,6 +53,7 @@ impl Engine {
 
         world.init_resource::<Messages<InputCmd>>();
         world.init_resource::<Messages<IntentMove>>();
+        world.init_resource::<DefsCache>();
 
         Self {
             world,
@@ -132,6 +136,21 @@ impl Engine {
                     });
             }
         }
+    }
+
+    /// Принудительно заставляет ECS перечитать данные из Depot в DefsCache
+    pub fn rebuild_cache(&mut self) {
+        self.world
+            .resource_scope(|world, mut cache: Mut<DefsCache>| {
+                let game_data_res = world.get_resource::<GameDataResource>().unwrap();
+                let guard = game_data_res.depot.read().unwrap();
+
+                if let Some(depot) = guard.as_ref() {
+                    cache.rebuild_from(depot);
+                } else {
+                    tracing::warn!("rebuild_cache called, but Depot is empty!");
+                }
+            });
     }
 
     /// Создание сущности (Фабрика)
