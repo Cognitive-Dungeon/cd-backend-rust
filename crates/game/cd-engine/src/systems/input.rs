@@ -5,7 +5,7 @@ use cd_telemetry::EngineEvent;
 
 use crate::{
     input::InputCmd,
-    systems::intents::{IntentCastSpell, IntentMove},
+    systems::intents::{IntentCastSpell, IntentEndTurn, IntentMove},
     world::{
         factory::EntityFactoryExt,
         resources::{DefsCache, TelemetryResource, TickResource},
@@ -22,6 +22,7 @@ pub fn handle_input_system(
     telemetry: Res<TelemetryResource>,
     tick: Res<TickResource>,
     mut intent_cast_writer: MessageWriter<IntentCastSpell>,
+    mut intent_end_turn_writer: MessageWriter<IntentEndTurn>,
     positions: Query<&Position>,
 ) {
     for cmd in reader.read() {
@@ -90,6 +91,13 @@ pub fn handle_input_system(
                         caster: entity,
                         spell_id,
                     });
+                }
+            }
+
+            InputCmd::EndTurn { entity_guid } => {
+                if let Some(entity) = spatial.get_entity(*entity_guid) {
+                    tracing::info!("InputSystem: IntentEndTurn dispatched for {}", entity_guid);
+                    intent_end_turn_writer.write(IntentEndTurn { entity });
                 }
             }
             _ => {}

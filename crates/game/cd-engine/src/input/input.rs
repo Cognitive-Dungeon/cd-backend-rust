@@ -19,4 +19,7 @@ pub enum InputCmd {
         entity_guid: ObjectGuid,
         name: String,
     },
+    EndTurn {
+        entity_guid: ObjectGuid,
+    },
 }

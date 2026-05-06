@@ -1,5 +1,5 @@
 use crate::input::InputCmd;
-use crate::systems::intents::IntentMove;
+use crate::systems::intents::{IntentEndTurn, IntentMove};
 use crate::world::resources::*;
 use crate::{StampedCommand, systems::intents::IntentCastSpell};
 use bevy_ecs::message::Messages;
@@ -51,6 +51,7 @@ impl Engine {
         world.init_resource::<Messages<InputCmd>>();
         world.init_resource::<Messages<IntentMove>>();
         world.init_resource::<Messages<IntentCastSpell>>();
+        world.init_resource::<Messages<IntentEndTurn>>();
         world.init_resource::<DefsCache>();
 
         Self {

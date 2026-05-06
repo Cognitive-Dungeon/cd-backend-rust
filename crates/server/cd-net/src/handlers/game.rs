@@ -33,3 +33,16 @@ pub async fn handle_cast(session: Session, cmd_tx: CommandSender, spell: String)
 
     Ok(())
 }
+
+pub async fn handle_end_turn(session: Session, cmd_tx: CommandSender) -> NetResult<()> {
+    let guid = session.require_guid().await?;
+
+    tracing::info!("Network: Player {} requested End Turn", guid);
+
+    cmd_tx
+        .send(InputCmd::EndTurn { entity_guid: guid })
+        .await
+        .map_err(|_| crate::error::NetError::EngineDead)?;
+
+    Ok(())
+}

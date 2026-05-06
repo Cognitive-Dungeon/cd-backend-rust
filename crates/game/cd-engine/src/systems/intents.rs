@@ -16,3 +16,9 @@ pub struct IntentCastSpell {
     pub caster: Entity,
     pub spell_id: SpellId,
 }
+
+/// Намерение завершить свой ход в бою.
+#[derive(Debug, Clone, Message)]
+pub struct IntentEndTurn {
+    pub entity: Entity,
+}

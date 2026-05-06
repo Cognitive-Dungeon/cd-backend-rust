@@ -298,10 +298,15 @@
         if (dir !== "None") {
             // Клиент теперь тупой: просто передает кнопку
             sendPacket("Move", { dir: dir });
+            dir = "None";
         }
 
         if (e.key === "f" || e.key === "F") {
             sendPacket("Cast", { spell: "melee_attack" });
+        }
+
+        if (e.key === "t" || e.key === "T") {
+            sendPacket("EndTurn", {});
         }
 
         // Управление камерой (локально)
