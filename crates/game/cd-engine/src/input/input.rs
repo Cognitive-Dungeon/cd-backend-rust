@@ -1,5 +1,5 @@
 use bevy_ecs::message::Message;
-use cd_core::{ObjectGuid, WorldPos};
+use cd_core::{Direction, ObjectGuid};
 
 /// Команды, которые меняют состояние мира.
 /// Это "чистые" данные.
@@ -8,7 +8,7 @@ pub enum InputCmd {
     /// Игрок хочет переместиться
     Move {
         entity_guid: ObjectGuid,
-        target: WorldPos,
+        direction: Direction,
     },
     /// Игрок хочет скастовать спелл (заготовка на будущее)
     CastSpell {

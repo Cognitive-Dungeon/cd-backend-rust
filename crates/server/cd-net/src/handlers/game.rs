@@ -1,15 +1,15 @@
 use crate::error::NetResult;
 use crate::session::Session;
-use cd_core::WorldPos;
+use cd_core::{Direction, WorldPos};
 use cd_engine::{CommandSender, InputCmd};
 
-pub async fn handle_move(session: Session, cmd_tx: CommandSender, x: i32, y: i32) -> NetResult<()> {
+pub async fn handle_move(session: Session, cmd_tx: CommandSender, dir: Direction) -> NetResult<()> {
     let guid = session.require_guid().await?;
-    tracing::info!("Network: Player {} requested move to ({}, {})", guid, x, y);
+    tracing::info!("Network: Player {} requested move {:?}", guid, dir);
 
     let cmd = InputCmd::Move {
         entity_guid: guid,
-        target: WorldPos::new(x, y, 0),
+        direction: dir,
     };
 
     cmd_tx

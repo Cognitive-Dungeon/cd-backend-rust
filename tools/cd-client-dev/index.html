@@ -285,16 +285,19 @@
         // Управление игроком (отправляем на сервер)
         // Команды отправляют АБСОЛЮТНЫЕ координаты (как ждет сервер cd-net)
         let dx = 0, dy = 0;
-        if (e.key === "w" || e.key === "W") dy = -1;
-        if (e.key === "s" || e.key === "S") dy = 1;
-        if (e.key === "a" || e.key === "A") dx = -1;
-        if (e.key === "d" || e.key === "D") dx = 1;
+        if (e.key === "w" || e.key === "W") dir = "North";
+        if (e.key === "s" || e.key === "S") dir = "South";
+        if (e.key === "a" || e.key === "A") dir = "West";
+        if (e.key === "d" || e.key === "D") dir = "East";
+        // Задел на будущее для диагоналей
+        if (e.key === "q" || e.key === "Q") dir = "NorthWest";
+        if (e.key === "e" || e.key === "E") dir = "NorthEast";
+        if (e.key === "z" || e.key === "Z") dir = "SouthWest";
+        if (e.key === "c" || e.key === "C") dir = "SouthEast";
 
-        if (dx !== 0 || dy !== 0) {
-            sendPacket("Move", { 
-                x: myPlayerPos.x + dx, 
-                y: myPlayerPos.y + dy 
-            });
+        if (dir !== "None") {
+            // Клиент теперь тупой: просто передает кнопку
+            sendPacket("Move", { dir: dir });
         }
 
         if (e.key === "f" || e.key === "F") {

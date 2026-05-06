@@ -1,5 +1,6 @@
 use bevy_ecs::prelude::*;
 use cd_core::WorldPos;
+use cd_ecs::Position;
 use cd_telemetry::EngineEvent;
 
 use crate::{
@@ -21,6 +22,7 @@ pub fn handle_input_system(
     telemetry: Res<TelemetryResource>,
     tick: Res<TickResource>,
     mut intent_cast_writer: MessageWriter<IntentCastSpell>,
+    positions: Query<&Position>,
 ) {
     for cmd in reader.read() {
         match cmd {
@@ -45,24 +47,32 @@ pub fn handle_input_system(
 
             InputCmd::Move {
                 entity_guid,
-                target,
+                direction,
             } => {
-                tracing::info!(
-                    "InputSystem: Processing Move for {} to {:?}",
-                    entity_guid,
-                    target
-                );
+                // Игнорируем пакеты "я никуда не иду"
+                if *direction == cd_core::Direction::None {
+                    continue;
+                }
+
                 if let Some(entity) = spatial.get_entity(*entity_guid) {
-                    intent_move_writer.write(IntentMove {
-                        entity,
-                        target: *target,
-                    });
-                    tracing::info!("InputSystem: IntentMove dispatched!");
-                } else {
-                    tracing::warn!(
-                        "InputSystem: Entity {} not found in spatial registry!",
-                        entity_guid
-                    );
+                    // Запрашиваем ТЕКУЩУЮ позицию игрока
+                    if let Ok(pos) = positions.get(entity) {
+                        // Получаем смещение (dx, dy, dz) из направления
+                        let (dx, dy, dz) = direction.offset();
+
+                        // Вычисляем целевую клетку
+                        let target =
+                            cd_core::WorldPos::new(pos.0.x() + dx, pos.0.y() + dy, pos.0.z() + dz);
+
+                        tracing::info!(
+                            "InputSystem: Processing Move {:?} for {} to {:?}",
+                            direction,
+                            entity_guid,
+                            target
+                        );
+
+                        intent_move_writer.write(IntentMove { entity, target });
+                    }
                 }
             }
 

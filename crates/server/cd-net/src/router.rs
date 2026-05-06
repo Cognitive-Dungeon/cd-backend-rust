@@ -19,8 +19,8 @@ impl Router {
             ClientPacket::Login { token } => {
                 handlers::auth::handle_login(session, self.cmd_tx.clone(), token).await
             }
-            ClientPacket::Move { x, y } => {
-                handlers::game::handle_move(session, self.cmd_tx.clone(), x, y).await
+            ClientPacket::Move { dir } => {
+                handlers::game::handle_move(session, self.cmd_tx.clone(), dir).await
             }
             ClientPacket::Cast { spell } => {
                 handlers::game::handle_cast(session, self.cmd_tx.clone(), spell).await

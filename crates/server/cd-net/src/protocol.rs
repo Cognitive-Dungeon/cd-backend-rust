@@ -1,3 +1,4 @@
+use cd_core::Direction;
 use serde::{Deserialize, Serialize};
 
 // --- ВНУТРЕННИЙ РОУТИНГ (Не отправляется клиенту) ---
@@ -44,7 +45,7 @@ impl OutboundMessage {
 #[serde(tag = "op", content = "d")] // { "op": "LOGIN", "d": { ... } }
 pub enum ClientPacket {
     Login { token: String },
-    Move { x: i32, y: i32 },
+    Move { dir: Direction },
     Cast { spell: String },
 }
 
