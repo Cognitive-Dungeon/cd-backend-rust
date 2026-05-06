@@ -9,8 +9,9 @@ use cd_telemetry::EngineEvent;
 use crate::{
     input::InputCmd,
     systems::intents::{IntentCastSpell, IntentMove},
-    world::resources::{
-        DefsCache, GridResource, RegistryResource, TelemetryResource, TickResource,
+    world::{
+        factory::EntityFactoryExt as _,
+        resources::{DefsCache, GridResource, RegistryResource, TelemetryResource, TickResource},
     },
 };
 
@@ -32,46 +33,21 @@ pub fn handle_input_system(
             InputCmd::SpawnPlayer { entity_guid, name } => {
                 let pos = WorldPos::new(3, 6, 0);
 
-                let creature_slug = "human"; // В будущем это будет браться из команды
-                let Some(&id) = defs.slug_to_creature.get(creature_slug) else {
-                    tracing::error!("Creature '{}' not found in Depot!", creature_slug);
-                    continue; // Пропускаем спавн
-                };
-                let Some(def) = defs.creatures.get(&id) else {
-                    tracing::error!("CreatureDef not found for {:?}", id);
-                    continue;
-                };
+                if let Some(entity) =
+                    commands.spawn_creature("human", *entity_guid, pos, name.clone(), &defs, true)
+                {
+                    // Обновляем индексы
+                    registry.inner.register(*entity_guid, entity);
+                    grid.inner.insert(*entity_guid, pos);
 
-                // Спавним через Commands
-                let entity = commands
-                    .spawn((
-                        Guid(*entity_guid),
-                        Position(pos),
-                        Name(name.clone()),
-                        Render { glyph: def.glyph },
-                        Stats {
-                            hp: def.base_hp,
-                            max_hp: def.base_hp,
-                            mana: def.base_mp,
-                            max_mana: def.base_mp,
-                        },
-                        Controller {
-                            agent_id: "player".into(),
-                        },
-                    ))
-                    .id();
-
-                // Обновляем ресурсы
-                registry.inner.register(*entity_guid, entity);
-                grid.inner.insert(*entity_guid, pos);
-
-                telemetry.0.emit(EngineEvent::EntitySpawned {
-                    tick_id: tick.id.0,
-                    guid: entity_guid.to_string(),
-                    x: pos.x(),
-                    y: pos.y(),
-                });
-                tracing::info!("Spawned [{}] {} at {:?}", entity_guid, name, pos);
+                    telemetry.0.emit(EngineEvent::EntitySpawned {
+                        tick_id: tick.id.0,
+                        guid: entity_guid.to_string(),
+                        x: pos.x(),
+                        y: pos.y(),
+                    });
+                    tracing::info!("Spawned [{}] {} at {:?}", entity_guid, name, pos);
+                }
             }
 
             InputCmd::Move {
