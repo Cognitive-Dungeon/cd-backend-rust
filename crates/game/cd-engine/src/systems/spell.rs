@@ -17,7 +17,7 @@ pub fn spell_system(
     for intent in reader.read() {
         tracing::info!("spell_system: got intent for spell_id {}", intent.spell_id);
         // 1. Находим определение спелла
-        let Some(spell) = defs.spells_by_id.get(&intent.spell_id) else {
+        let Some(spell) = defs.spells.get(&intent.spell_id) else {
             tracing::warn!("Unknown spell_id: {}", intent.spell_id);
             continue;
         };

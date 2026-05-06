@@ -157,6 +157,19 @@
             "columns": [
                 {
                     "typeStr": "text",
+                    "guid": "cdfa4f87-b58e-4663-8f81-58033ef8d272",
+                    "name": "slug",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
+                {
+                    "typeStr": "text",
                     "guid": "0e8dad9e-0bb9-462f-9b9e-48aa19653321",
                     "name": "name",
                     "description": "text field",
@@ -262,36 +275,39 @@
             "lines": [
                 {
                     "guid": "ca742138-fe87-4b7e-955a-3e4f86ba6f09",
-                    "id": "human",
+                    "id": "0",
                     "name": "Человек",
                     "desc": "Искатель приключений.",
                     "glyph": "@",
                     "color": "#228b22",
                     "base_hp": 100,
                     "base_mp": 100,
-                    "speed": 100
+                    "speed": 100,
+                    "slug": "human"
                 },
                 {
                     "guid": "22412884-bd01-4f20-b0df-31a831ff7ba9",
-                    "id": "rat_sewer",
+                    "id": "1",
                     "name": "Крыса",
                     "desc": "Огромная канализационная крыса.",
                     "glyph": "r",
                     "color": "#8B4513",
                     "base_hp": 15,
                     "base_mp": 0,
-                    "speed": 120
+                    "speed": 120,
+                    "slug": "rat_sewer"
                 },
                 {
                     "guid": "edd4e038-6e10-494d-a5c0-38bf9df685a0",
-                    "id": "skeleton",
+                    "id": "2",
                     "name": "Скелет",
                     "desc": "Восставший из мертвых.",
                     "glyph": "s",
                     "color": "#EEEEEE",
                     "base_hp": 40,
                     "base_mp": 0,
-                    "speed": 80
+                    "speed": 80,
+                    "slug": "skeleton"
                 }
             ],
             "hidden": false,
@@ -316,6 +332,19 @@
             "displayColumn": "id",
             "guid": "a52ec402-5237-4251-91dc-cc641672771d",
             "columns": [
+                {
+                    "typeStr": "text",
+                    "guid": "318ee284-969c-4533-b3ff-f1740df7b839",
+                    "name": "slug",
+                    "description": "text field",
+                    "defaultValue": "",
+                    "iconName": "newText",
+                    "configurable": {
+                        "name": "text",
+                        "description": "text",
+                        "defaultValue": "text"
+                    }
+                },
                 {
                     "typeStr": "text",
                     "guid": "876dbbc9-c8b3-4b7f-b07d-8d7a67d7ec8b",
@@ -385,21 +414,23 @@
             "lines": [
                 {
                     "guid": "71aba281-1c05-4261-a5a2-5cbfd34900e0",
-                    "id": "door_closed",
+                    "id": "0",
                     "name": "Закрытая дверь",
                     "glyph": "+",
                     "is_solid": true,
                     "is_opaque": true,
-                    "color": "#CD853F"
+                    "color": "#CD853F",
+                    "slug": "door_closed"
                 },
                 {
                     "guid": "a8032a03-3287-40cc-8ee6-eea5d8fc4119",
-                    "id": "chest",
+                    "id": "1",
                     "name": "Сундук",
                     "glyph": "■",
                     "is_solid": true,
                     "is_opaque": false,
-                    "color": "#D2991E"
+                    "color": "#D2991E",
+                    "slug": "chest"
                 }
             ],
             "hidden": false,
@@ -533,12 +564,12 @@
             "lines": [
                 {
                     "guid": "e47e6400-b557-4cd4-afde-006f66b3e63a",
-                    "id": "0",
+                    "id": "1",
                     "name": "Melee Attack",
                     "target": "self",
                     "range": 1,
                     "effect_type": "damage",
-                    "effect_amount": 10,
+                    "effect_amount": 0,
                     "damage_type": "physical",
                     "slug": "melee_attack"
                 }

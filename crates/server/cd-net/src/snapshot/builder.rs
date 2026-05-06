@@ -47,7 +47,7 @@ impl SnapshotBuilder {
 
         let mut id_to_glyph = std::collections::HashMap::new();
         for mat in defs.materials.values() {
-            id_to_glyph.insert(mat.mat_id, mat.glyph);
+            id_to_glyph.insert(mat.id, mat.glyph);
         }
 
         for ly in 0..16 {

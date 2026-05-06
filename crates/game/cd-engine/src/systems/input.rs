@@ -32,10 +32,14 @@ pub fn handle_input_system(
             InputCmd::SpawnPlayer { entity_guid, name } => {
                 let pos = WorldPos::new(3, 6, 0);
 
-                let creature_id = "human"; // В будущем это будет браться из команды
-                let Some(def) = defs.creatures.get(creature_id) else {
-                    tracing::error!("Creature '{}' not found in Depot!", creature_id);
+                let creature_slug = "human"; // В будущем это будет браться из команды
+                let Some(&id) = defs.slug_to_creature.get(creature_slug) else {
+                    tracing::error!("Creature '{}' not found in Depot!", creature_slug);
                     continue; // Пропускаем спавн
+                };
+                let Some(def) = defs.creatures.get(&id) else {
+                    tracing::error!("CreatureDef not found for {:?}", id);
+                    continue;
                 };
 
                 // Спавним через Commands
@@ -87,7 +91,7 @@ pub fn handle_input_system(
                 spell_slug,
             } => {
                 // Резолвим slug → SpellId через кэш
-                let Some(&spell_id) = defs.spells_by_slug.get(spell_slug.as_str()) else {
+                let Some(&spell_id) = defs.slug_to_spell.get(spell_slug) else {
                     tracing::warn!("Unknown spell slug: {}", spell_slug);
                     continue;
                 };

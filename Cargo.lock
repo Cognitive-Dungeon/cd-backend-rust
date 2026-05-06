@@ -503,6 +503,7 @@ dependencies = [
  "bevy_ecs",
  "cd-common",
  "cd-core",
+ "cd-data",
  "cd-map",
  "serde",
 ]
