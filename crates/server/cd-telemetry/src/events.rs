@@ -1,4 +1,3 @@
-use cd_core::{ObjectGuid, WorldPos};
 use serde::Serialize;
 
 /// Структурированные события движка.
@@ -32,6 +31,17 @@ pub enum EngineEvent {
         to_x: i32,
         to_y: i32,
     },
+
+    /// Сущность получила урон
+    EntityDamaged {
+        tick_id: u64,
+        guid: String,
+        amount: i32,
+        hp_left: i32,
+    },
+
+    /// Сущность умерла
+    EntityDied { tick_id: u64, guid: String },
 
     /// Изолированная ошибка (движок продолжает работать)
     ErrorIsolated {

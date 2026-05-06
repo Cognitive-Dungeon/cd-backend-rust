@@ -6,3 +6,4 @@ pub mod subsystems;
 pub use cd_data::defs;
 pub use cd_ecs::registry::EntityRegistry;
 pub use factory::EntityFactoryExt;
+pub use subsystems::{CombatSubsystem, SpatialSubsystem};

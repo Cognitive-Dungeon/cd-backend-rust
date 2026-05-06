@@ -70,7 +70,7 @@ impl ObjectGuid {
     pub fn as_u64(&self) -> u64 {
         self.0
     }
-    
+
     /// Восстановить GUID из сырого u64 (для десериализации из storage layer)
     pub fn from_raw(raw: u64) -> Self {
         Self(raw)

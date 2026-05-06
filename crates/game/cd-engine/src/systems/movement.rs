@@ -1,25 +1,73 @@
 use crate::systems::intents::IntentMove;
-use crate::world::resources::{GridResource, MapResource, RegistryResource};
-use crate::world::subsystems::SpatialSubsystem;
+use crate::world::subsystems::{CombatSubsystem, SpatialSubsystem};
 use bevy_ecs::message::MessageReader;
-use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::system::Query;
 use cd_core::ObjectGuid;
-use cd_ecs::components::{Name, Position};
-use cd_ecs::{Guid, Stats};
+use cd_ecs::Guid;
+use cd_ecs::components::Position;
 use std::collections::HashMap;
 
 pub fn movement_system(
     mut reader: MessageReader<IntentMove>,
-    mut movers: Query<(&Guid, &Name, &mut Position, &Stats)>,
-    mut spatial: SpatialSubsystem, // <-- Подключили подсистему!
+    mut movers: Query<(&Guid, &mut Position)>,
+    mut spatial: SpatialSubsystem,
+    combat: CombatSubsystem,
 ) {
+    let positions: HashMap<ObjectGuid, cd_core::WorldPos> =
+        movers.iter().map(|(guid, pos)| (guid.0, pos.0)).collect();
+
     for intent in reader.read() {
-        if let Ok((guid, name, mut pos, stats)) = movers.get_mut(intent.entity) {
-            // Вся грязная логика ушла под капот
-            if spatial.move_entity(guid.0, pos.0, intent.target).is_ok() {
-                pos.0 = intent.target;
-                tracing::info!("{} moved!", name.0);
+        // 1. Сначала безопасно проверяем статус через подсистему
+        if !combat.is_alive(intent.entity) {
+            tracing::warn!(
+                "MovementSystem: Entity {:?} cannot move, it is dead or invalid",
+                intent.entity
+            );
+            continue;
+        }
+
+        // 2. Только если жив, достаем сущность для мутации позиции
+        if let Ok((guid, mut pos)) = movers.get_mut(intent.entity) {
+            if spatial.is_solid_map(intent.target) {
+                tracing::info!(
+                    "MovementSystem: {} bumped into map wall at {:?}",
+                    guid.0,
+                    intent.target
+                );
+                continue;
             }
+
+            let entities_in_bucket = spatial.get_entities_in_bucket(intent.target);
+            let mut bumped = false;
+
+            for &other_guid in entities_in_bucket {
+                if other_guid == guid.0 {
+                    continue;
+                }
+                if positions.get(&other_guid) == Some(&intent.target) {
+                    tracing::info!(
+                        "MovementSystem: {} bumped into entity {}!",
+                        guid.0,
+                        other_guid
+                    );
+                    bumped = true;
+                    break;
+                }
+            }
+
+            if bumped {
+                continue;
+            }
+
+            let old_pos = pos.0;
+            pos.0 = intent.target;
+            spatial.move_entity(guid.0, old_pos, intent.target);
+
+            tracing::info!(
+                "MovementSystem: {} successfully moved to {:?}",
+                guid.0,
+                intent.target
+            );
         }
     }
 }

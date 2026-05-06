@@ -1,5 +1,6 @@
 // crates/cd-app/src/app.rs
 use anyhow::Result;
+use bevy_ecs::schedule::IntoScheduleConfigs;
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
 use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
 use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
@@ -184,9 +185,14 @@ fn build_engine(
     }
 
     // 2. Регистрация систем
-    engine.add_system(cd_engine::systems::input::handle_input_system);
-    engine.add_system(cd_engine::systems::movement::movement_system);
-    engine.add_system(cd_engine::systems::spell::spell_system);
+    engine.schedule.add_systems(
+        (
+            cd_engine::systems::input::handle_input_system,
+            cd_engine::systems::movement::movement_system,
+            cd_engine::systems::spell::spell_system,
+        )
+            .chain(),
+    );
 
     // 3. Генерация тестового мира
     engine.generate_test_world();
