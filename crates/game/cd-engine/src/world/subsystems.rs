@@ -2,7 +2,7 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::system::SystemParam;
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::defs::SpellEffect;
-use cd_ecs::{Guid, IsDead, Stats};
+use cd_ecs::{CombatBubble, Guid, InCombat, IsDead, Stats};
 use cd_telemetry::EngineEvent;
 
 use crate::world::resources::{
@@ -61,6 +61,9 @@ pub struct CombatSubsystem<'w, 's> {
     dead: Query<'w, 's, &'static IsDead>,
     names: Query<'w, 's, &'static cd_ecs::components::Name>,
     guids: Query<'w, 's, &'static Guid>,
+
+    in_combat: Query<'w, 's, &'static mut InCombat>,
+    bubbles: Query<'w, 's, &'static CombatBubble>,
 
     commands: Commands<'w, 's>,
     telemetry: Res<'w, TelemetryResource>,
@@ -164,5 +167,107 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
             .unwrap_or_else(|_| "Unknown".to_string());
 
         tracing::info!(target = %guid, name = %name_str, heal = amount, hp = stats.hp, "Heal applied");
+    }
+
+    /// Списывает AP. Если сущность НЕ в бою, ничего не списывает (возвращает Ok).
+    pub fn try_consume_ap(&mut self, entity: Entity, amount: i32) -> Result<(), &'static str> {
+        if let Ok(mut combat) = self.in_combat.get_mut(entity)
+            && let Ok(bubble) = self.bubbles.get(combat.bubble)
+        {
+            if bubble.current_actor() != Some(entity) {
+                return Err("Not your turn!");
+            }
+            if combat.action_points < amount {
+                return Err("Not enough Action Points!");
+            }
+            combat.action_points -= amount;
+            tracing::info!("Consumed {} AP. Left: {}", amount, combat.action_points);
+            return Ok(());
+        }
+        Ok(()) // Вне боя действия бесплатны
+    }
+
+    /// Списывает MP (шаги). Аналогично AP.
+    pub fn try_consume_mp(&mut self, entity: Entity, amount: i32) -> Result<(), &'static str> {
+        if let Ok(mut combat) = self.in_combat.get_mut(entity)
+            && let Ok(bubble) = self.bubbles.get(combat.bubble)
+        {
+            if bubble.current_actor() != Some(entity) {
+                return Err("Not your turn!");
+            }
+            if combat.movement_points < amount {
+                return Err("Not enough Movement Points!");
+            }
+            combat.movement_points -= amount;
+            tracing::info!("Consumed {} MP. Left: {}", amount, combat.movement_points);
+            return Ok(());
+        }
+        Ok(())
+    }
+
+    /// Начинает бой: создает CombatBubble и втягивает всех вокруг.
+    pub fn initiate_combat(
+        &mut self,
+        initiator: Entity,
+        center_pos: WorldPos,
+        spatial: &SpatialSubsystem,
+    ) {
+        // Если инициатор уже в бою — пузырь не создаем
+        if self.in_combat.get(initiator).is_ok() {
+            return;
+        }
+
+        tracing::info!("⚔️ Initiating COMBAT BUBBLE around {:?}", center_pos);
+
+        // 1. Ищем всех в радиусе 16 тайлов (1 чанк)
+        let nearby_guids = spatial.grid.inner.query_radius(center_pos, 16);
+        let mut participants = Vec::new();
+
+        for guid in nearby_guids {
+            if let Some(entity) = spatial.get_entity(guid) {
+                // Берем только живых и тех, кто еще не сражается
+                if self.is_alive(entity) && self.in_combat.get(entity).is_err() {
+                    participants.push(entity);
+                }
+            }
+        }
+
+        if participants.len() < 2 {
+            tracing::info!("Not enough participants to start combat.");
+            return;
+        }
+
+        // 2. Инициатор ходит первым! (Сортируем остальных для детерминизма)
+        participants.retain(|&e| e != initiator);
+        participants.sort();
+        participants.insert(0, initiator);
+
+        // 3. Создаем сущность-менеджер боя
+        let bubble_entity = self
+            .commands
+            .spawn(CombatBubble {
+                turn_order: participants.clone(),
+                current_turn_idx: 0,
+                round: 1,
+            })
+            .id();
+
+        // 4. Вешаем на всех маркер "Я в бою"
+        for &actor in &participants {
+            self.commands.entity(actor).insert(InCombat {
+                bubble: bubble_entity,
+                action_points: 6,    // Стартовые AP
+                movement_points: 10, // Стартовые MP
+            });
+
+            let name = self
+                .names
+                .get(actor)
+                .map(|n| n.0.clone())
+                .unwrap_or_default();
+            tracing::info!("🛡️ {} joined the combat!", name);
+        }
+
+        tracing::info!("🔥 Combat started! Round 1. It is {:?}'s turn.", initiator);
     }
 }

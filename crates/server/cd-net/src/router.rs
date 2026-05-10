@@ -25,7 +25,7 @@ impl Router {
             ClientPacket::Cast { spell } => {
                 handlers::game::handle_cast(session, self.cmd_tx.clone(), spell).await
             }
-            ClientPacket::EndTurn => {
+            ClientPacket::EndTurn {} => {
                 handlers::game::handle_end_turn(session, self.cmd_tx.clone()).await
             }
         }

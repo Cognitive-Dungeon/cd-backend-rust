@@ -47,7 +47,7 @@ pub enum ClientPacket {
     Login { token: String },
     Move { dir: Direction },
     Cast { spell: String },
-    EndTurn,
+    EndTurn {},
 }
 
 /// Сообщения от Сервера к Клиенту

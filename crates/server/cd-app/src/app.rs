@@ -188,6 +188,7 @@ fn build_engine(
     engine.schedule.add_systems(
         (
             cd_engine::systems::input::handle_input_system,
+            cd_engine::systems::turn::npc_ai_system,
             cd_engine::systems::turn::combat_turn_system,
             cd_engine::systems::movement::movement_system,
             cd_engine::systems::spell::spell_system,

@@ -1,5 +1,8 @@
 use bevy_ecs::prelude::*;
-use cd_ecs::components::{CombatBubble, InCombat};
+use cd_ecs::{
+    Controller,
+    components::{CombatBubble, InCombat},
+};
 
 use crate::systems::intents::IntentEndTurn;
 
@@ -52,6 +55,25 @@ pub fn combat_turn_system(
         if let Ok(mut next_in_combat) = combatants.get_mut(next_actor) {
             next_in_combat.action_points = 6;
             next_in_combat.movement_points = 10;
+        }
+    }
+}
+
+/// Простой ИИ: если сейчас ход NPC, он автоматически передает ход дальше.
+pub fn npc_ai_system(
+    bubbles: Query<&CombatBubble>,
+    combatants: Query<(Entity, &InCombat, Option<&Controller>)>,
+    mut intent_end_turn_writer: MessageWriter<IntentEndTurn>,
+) {
+    for bubble in bubbles.iter() {
+        if let Some(actor) = bubble.current_actor()
+            && let Ok((entity, _, controller)) = combatants.get(actor)
+        {
+            // Если у сущности НЕТ компонента Controller — значит это NPC
+            if controller.is_none() {
+                tracing::info!("NPC {:?} is thinking... and passes the turn!", entity);
+                intent_end_turn_writer.write(IntentEndTurn { entity });
+            }
         }
     }
 }

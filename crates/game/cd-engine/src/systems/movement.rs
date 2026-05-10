@@ -11,7 +11,7 @@ pub fn movement_system(
     mut reader: MessageReader<IntentMove>,
     mut movers: Query<(&Guid, &mut Position)>,
     mut spatial: SpatialSubsystem,
-    combat: CombatSubsystem,
+    mut combat: CombatSubsystem,
 ) {
     let positions: HashMap<ObjectGuid, cd_core::WorldPos> =
         movers.iter().map(|(guid, pos)| (guid.0, pos.0)).collect();
@@ -56,6 +56,11 @@ pub fn movement_system(
             }
 
             if bumped {
+                continue;
+            }
+
+            if let Err(reason) = combat.try_consume_mp(intent.entity, 1) {
+                tracing::warn!("MovementSystem: {} cannot move: {}", guid.0, reason);
                 continue;
             }
 

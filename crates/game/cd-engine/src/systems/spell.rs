@@ -46,7 +46,25 @@ pub fn spell_system(
             _ => continue,
         };
 
-        // Применяем эффект через фасад (ни одной строки работы с HP здесь нет!)
+        if targets.is_empty() {
+            tracing::info!(
+                "{} cast {} — no targets in range",
+                caster_guid.0,
+                spell.slug
+            );
+            continue;
+        }
+
+        // 1. Инициируем бой (Если кастер еще не в бою, он стянет всех мобов в радиусе)
+        combat.initiate_combat(intent.caster, caster_pos.0, &spatial);
+
+        // 2. Тратим 2 AP за любое заклинание
+        if let Err(reason) = combat.try_consume_ap(intent.caster, 2) {
+            tracing::warn!("SpellSystem: {} cannot cast: {}", caster_guid.0, reason);
+            continue;
+        }
+
+        // 3. Применяем эффект через фасад (ни одной строки работы с HP здесь нет!)
         for target_entity in targets {
             combat.apply_effect(target_entity, &spell.effect);
         }
