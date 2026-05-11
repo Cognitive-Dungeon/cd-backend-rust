@@ -10,6 +10,7 @@ use std::fmt;
     feature = "rkyv",
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
 )]
+#[cfg_attr(feature = "bevy", derive(bevy_reflect::Reflect))]
 pub struct ObjectGuid(u64);
 
 impl ObjectGuid {
