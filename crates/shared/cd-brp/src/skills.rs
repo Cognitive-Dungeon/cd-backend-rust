@@ -282,7 +282,7 @@ impl TempModifier {
     #[inline]
     #[must_use]
     pub fn is_expired(&self, current_tick: u64) -> bool {
-        self.expires_at.map_or(false, |exp| current_tick >= exp)
+        self.expires_at.is_some_and(|exp| current_tick >= exp)
     }
 }
 
@@ -586,9 +586,16 @@ pub fn update_category_modifiers_cache(
 ) {
     if let Ok(chars) = chars_query.single() {
         let new_version = {
-            use std::collections::hash_map::DefaultHasher;
-            let mut hasher = DefaultHasher::new();
-            chars.hash(&mut hasher);
+            use seahash::SeaHasher;
+            let mut hasher = SeaHasher::new();
+            chars.str.hash(&mut hasher);
+            chars.con.hash(&mut hasher);
+            chars.siz.hash(&mut hasher);
+            chars.int.hash(&mut hasher);
+            chars.pow.hash(&mut hasher);
+            chars.dex.hash(&mut hasher);
+            chars.cha.hash(&mut hasher);
+            chars.edu.hash(&mut hasher);
             hasher.finish()
         };
 
