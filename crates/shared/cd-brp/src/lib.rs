@@ -5,6 +5,7 @@
 pub mod action_points;
 pub mod anatomy;
 pub mod characteristics;
+pub mod combat;
 pub mod dice;
 pub mod encumbrance;
 mod error;
@@ -14,6 +15,7 @@ pub mod skills;
 pub use action_points::ActionPoints;
 pub use anatomy::{Anatomy, BodyPart, HitLocationType, Injury};
 pub use characteristics::Characteristics;
+pub use combat::{AttackResolution, CombatHitResult, EffectiveHit, WeaponDamage, WeaponSpecial};
 pub use encumbrance::{Encumbrance, EncumbrancePenalties};
 pub use error::{BrpError, BrpResult};
 pub use rolls::{SuccessLevel, resistance_chance};

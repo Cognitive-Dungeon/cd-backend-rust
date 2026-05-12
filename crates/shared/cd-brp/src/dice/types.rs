@@ -93,17 +93,17 @@ impl DamageModifier {
 
     /// Парсинг из строки (для обратной совместимости / импорта)
     pub fn parse(s: &str) -> Option<Self> {
-        use {DiceType::*, Sign::*};
+        use DiceType::*;
         match s.trim().to_uppercase().as_str() {
             "0" | "" | "NONE" => Some(Self::NONE),
-            "-1D6" => Some(Self::new(Negative, 1, D6)),
-            "-1D4" => Some(Self::new(Negative, 1, D4)),
-            "+1D4" => Some(Self::new(Positive, 1, D4)),
-            "+1D6" => Some(Self::new(Positive, 1, D6)),
-            "+2D6" => Some(Self::new(Positive, 2, D6)),
-            "+3D6" => Some(Self::new(Positive, 3, D6)),
-            "+4D6" => Some(Self::new(Positive, 4, D6)),
-            _ => Some(Self::NONE),
+            "-1D6" => Some(Self::new(Sign::Negative, 1, D6)),
+            "-1D4" => Some(Self::new(Sign::Negative, 1, D4)),
+            "+1D4" => Some(Self::new(Sign::Positive, 1, D4)),
+            "+1D6" => Some(Self::new(Sign::Positive, 1, D6)),
+            "+2D6" => Some(Self::new(Sign::Positive, 2, D6)),
+            "+3D6" => Some(Self::new(Sign::Positive, 3, D6)),
+            "+4D6" => Some(Self::new(Sign::Positive, 4, D6)),
+            _ => None,
         }
     }
 }
