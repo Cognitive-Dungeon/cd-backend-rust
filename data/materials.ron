@@ -1,0 +1,29 @@
+{
+    "void": MaterialDef(
+        id: 0,
+        slug: "void",
+        name: "Пустота",
+        desc: "Абсолютное ничто",
+        glyph: (' ', "#000000"),
+        is_solid: false,
+        is_opaque: false,
+    ),
+    "floor_stone": MaterialDef(
+        id: 1,
+        slug: "floor_stone",
+        name: "Каменный пол",
+        desc: "Холодный пол из грубых плит.",
+        glyph: ('.', "#ffffff"),
+        is_solid: false,
+        is_opaque: false,
+    ),
+    "wall_stone": MaterialDef(
+        id: 2,
+        slug: "wall_stone",
+        name: "Каменная стена",
+        desc: "Массивная кладка.",
+        glyph: ('#', "#ffffff"),
+        is_solid: true,
+        is_opaque: true,
+    ),
+}

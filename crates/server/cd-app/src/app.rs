@@ -2,11 +2,12 @@
 use anyhow::Result;
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
-use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder};
-use cd_net::protocol::{EntityView, OutboundMessage, ServerPacket, TileView};
+use cd_data::provider::RonDataProvider;
+use cd_engine::{BroadcastSink, CommandBus, Engine, EngineBuilder, InputCmd};
+use cd_net::protocol::{OutboundMessage, ServerPacket, TileView};
 use cd_net::snapshot::SnapshotBuilder;
 use cd_net::{ApiEntity, ApiState, ReloadCallback, SharedApiState};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use tokio::sync::{broadcast, oneshot};
@@ -46,7 +47,6 @@ impl Application {
 
 pub struct ApplicationBuilder {
     data_path: String,
-    depot_filename: String,
     port: u16,
     tick_rate_ms: u64,
 }
@@ -55,7 +55,6 @@ impl ApplicationBuilder {
     pub fn new() -> Self {
         Self {
             data_path: "./data".to_string(),
-            depot_filename: "game.cdb".to_string(),
             port: 8080,
             tick_rate_ms: 50, // 20 TPS
         }
@@ -63,54 +62,47 @@ impl ApplicationBuilder {
 
     pub fn build(self) -> Result<Application> {
         // --- 1. ТРУБЫ (Каналы связи) ---
-        // Команды от Сети -> в Движок
         let (cmd_bus, cmd_sender) = CommandBus::new(1024);
-
-        // Сообщения от Движка -> в Сеть
         let (outbound_tx, _) = broadcast::channel::<cd_net::protocol::OutboundMessage>(16);
-
-        // Телеметрия от Движка -> в Сеть (SDK)
         let (telemetry_sink, telemetry_tx) = BroadcastSink::new(256);
-
-        // Сигналы остановки
         let (engine_stop_tx, engine_stop_rx) = oneshot::channel();
         let (net_stop_tx, net_stop_rx) = oneshot::channel();
 
-        // --- 2. ОБЩЕЕ СОСТОЯНИЕ (Только для REST API) ---
+        // --- 2. ОБЩЕЕ СОСТОЯНИЕ И ДАННЫЕ ---
         let api_state: SharedApiState = Arc::new(Mutex::new(ApiState::default()));
-        let game_data: Arc<RwLock<Option<cd_engine::Depot>>> = Arc::new(RwLock::new(None));
+        // Создаем наш новый стейтлесс-провайдер (никаких RwLock!)
+        let data_provider = Arc::new(RonDataProvider::new(&self.data_path));
 
         // --- 3. ИГРОВЫЕ ДАННЫЕ (Репозитории) ---
-        let depot_path =
-            std::path::PathBuf::from(format!("{}/{}", self.data_path, self.depot_filename));
         let world_repo = Arc::new(JsonWorldRepository::new(&self.data_path)?);
         let entity_repo = Arc::new(JsonEntityRepository::new(&self.data_path)?);
 
+        // Колбэк для REST API
         let reload_cb: ReloadCallback = {
-            let game_data_api = game_data.clone();
-            let depot_path_api = depot_path.clone();
-            Arc::new(tokio::sync::Mutex::new(Box::new(
-                move || match cd_engine::Depot::load(&depot_path_api) {
-                    Ok(depot) => *game_data_api.write().unwrap() = Some(depot),
-                    Err(e) => tracing::error!("API reload failed: {}", e),
-                },
-            )))
+            let cmd_tx = cmd_sender.clone();
+            Arc::new(tokio::sync::Mutex::new(Box::new(move || {
+                let sender = cmd_tx.clone();
+                // Запускаем асинхронную отправку команды в фоне
+                tokio::spawn(async move {
+                    if let Err(e) = sender.send(InputCmd::ReloadData).await {
+                        tracing::error!("Failed to send ReloadData command: {}", e);
+                    }
+                });
+            })))
         };
 
         // --- 4. ЗАПУСК ДВИЖКА (Изолированный поток ОС) ---
         let engine_thread = {
-            let game_data = game_data.clone();
             let outbound_tx = outbound_tx.clone();
             let api_state = api_state.clone();
-            let depot_path = depot_path.clone();
+            let provider_for_engine = data_provider.clone();
 
             std::thread::spawn(move || {
                 let engine = build_engine(
                     Arc::new(telemetry_sink),
                     world_repo,
                     entity_repo,
-                    game_data,
-                    &depot_path,
+                    provider_for_engine,
                 );
                 run_engine_loop(
                     engine,
@@ -127,7 +119,7 @@ impl ApplicationBuilder {
         let network_task = tokio::spawn(cd_net::run_server(
             self.port,
             cmd_sender,
-            outbound_tx.subscribe(), // Передаем Receiver! Сеть только слушает.
+            outbound_tx.subscribe(),
             telemetry_tx,
             net_stop_rx,
             api_state,
@@ -158,31 +150,19 @@ fn build_engine(
     telemetry_sink: Arc<BroadcastSink>,
     world_repo: Arc<JsonWorldRepository>,
     entity_repo: Arc<JsonEntityRepository>,
-    game_data: Arc<RwLock<Option<cd_engine::Depot>>>,
-    depot_path: &std::path::Path,
+    data_provider: Arc<dyn cd_data::provider::DataProvider>,
 ) -> Engine {
     let mut engine = EngineBuilder::new()
         .telemetry(telemetry_sink)
         .world_repo(world_repo)
         .entity_repo(entity_repo)
         .world_seed(0xDEAD_CAFE_BABE_1337)
-        .game_data(game_data.clone())
+        .data_provider(data_provider)
         .build();
 
-    // 1. Загрузка Depot
-    tracing::info!("Trying to load Depot from {:?}", depot_path);
-    if depot_path.exists() {
-        match cd_engine::Depot::load(depot_path) {
-            Ok(depot) => {
-                *game_data.write().unwrap() = Some(depot);
-                engine.rebuild_cache();
-                tracing::info!("Depot loaded and cache rebuilt successfully!");
-            }
-            Err(e) => tracing::error!("Failed to parse game.cdb: {}", e),
-        }
-    } else {
-        tracing::error!("Depot file NOT FOUND at {:?}", depot_path);
-    }
+    // 1. Загрузка данных
+    tracing::info!("Loading game data via DataProvider...");
+    engine.rebuild_cache();
 
     // 2. Регистрация систем
     engine.schedule.add_systems(
@@ -262,8 +242,6 @@ fn publish_state(
     }
 
     // 2. WebSocket рассылка
-    // Если никто не подключен (канал пуст), .send() вернет ошибку, которую мы просто игнорируем (_)
-    // 1. ОТПРАВКА СУЩНОСТЕЙ (Каждый тик)
     let entities_view: Vec<cd_net::protocol::EntityView> = snapshots
         .into_iter()
         .map(|snap| cd_net::protocol::EntityView {
@@ -283,13 +261,11 @@ fn publish_state(
     };
     let _ = outbound_tx.send(OutboundMessage::broadcast(packet));
 
-    // 2. ОТПРАВКА КАРТЫ (Раз в секунду для теста)
+    // 3. ОТПРАВКА КАРТЫ (Раз в секунду для теста)
     if tick.is_multiple_of(20) {
-        // Берем чанк 0,0
         let chunk_pos = cd_core::WorldPos::new(0, 0, 0);
         let chunk_snap = SnapshotBuilder::build_chunk(&engine.world, chunk_pos);
 
-        // Перегоняем палитру в сетевой формат TileView
         let palette_view: Vec<TileView> = chunk_snap
             .palette
             .into_iter()
@@ -299,7 +275,6 @@ fn publish_state(
             })
             .collect();
 
-        // Отправляем! Обрати внимание на опечатку в protocol.rs (pallete с двумя l и одной t)
         let chunk_packet = ServerPacket::MapChunk {
             x: chunk_snap.chunk_x,
             y: chunk_snap.chunk_y,

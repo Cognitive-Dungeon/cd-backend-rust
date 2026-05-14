@@ -1,6 +1,3 @@
-use crate::depot::Line;
-use cd_common::Glyph;
-
 pub mod creature;
 pub mod furniture;
 pub mod material;
@@ -15,17 +12,12 @@ pub use spell::{DamageType, SpellDef, SpellEffect, SpellId, SpellTarget};
 #[error("invalid numeric ID: {0}")]
 pub struct ParseIdError(pub String);
 
-/// Внутренний хелпер для парсинга глифа и цвета из строки Depot.
-pub(crate) fn parse_glyph(line: &Line<'_>) -> Glyph {
-    let hex_color = line.color("color");
-    Glyph::from_json(line.text("glyph"), hex_color).unwrap_or(Glyph::new(0xFF00FF, b'?'))
-}
-
 /// Макрос для автоматической генерации строгих ID (Newtype pattern).
 /// Реализует FromStr и Display, убирая boilerplate.
 macro_rules! define_id {
     ($name:ident) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+        #[serde(transparent)]
         pub struct $name(pub u32);
 
         impl std::str::FromStr for $name {

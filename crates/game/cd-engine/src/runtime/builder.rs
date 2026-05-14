@@ -1,6 +1,5 @@
 use crate::engine::Engine;
-use crate::tick::TickId;
-use cd_data::{EntityRepository, WorldRepository, depot::Depot};
+use cd_data::{EntityRepository, WorldRepository, provider::DataProvider};
 use cd_telemetry::{NullSink, TelemetrySink};
 use std::sync::{Arc, RwLock};
 
@@ -12,7 +11,7 @@ pub struct EngineBuilder {
     telemetry: Option<Arc<dyn TelemetrySink>>,
     world_repo: Option<Arc<dyn WorldRepository>>,
     entity_repo: Option<Arc<dyn EntityRepository>>,
-    game_data: Option<Arc<RwLock<Option<Depot>>>>,
+    data_provider: Option<Arc<dyn DataProvider>>,
 }
 
 impl EngineBuilder {
@@ -40,8 +39,8 @@ impl EngineBuilder {
         self
     }
 
-    pub fn game_data(mut self, game_data: Arc<RwLock<Option<Depot>>>) -> Self {
-        self.game_data = Some(game_data);
+    pub fn data_provider(mut self, provider: Arc<dyn DataProvider>) -> Self {
+        self.data_provider = Some(provider);
         self
     }
 
@@ -51,8 +50,8 @@ impl EngineBuilder {
             self.telemetry.unwrap_or_else(|| Arc::new(NullSink)),
             self.world_repo,
             self.entity_repo,
-            self.game_data
-                .unwrap_or_else(|| Arc::new(RwLock::new(None))),
+            self.data_provider
+                .expect("DataProvider is strictly required to build the Engine!"),
         )
     }
 }

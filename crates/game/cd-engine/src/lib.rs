@@ -6,7 +6,6 @@ pub mod systems;
 pub mod watcher;
 pub mod world;
 
-pub use cd_data::depot::{Depot, FromDepotLine};
 pub use cd_telemetry::{BroadcastSink, EngineEvent, NullSink, TelemetrySink};
 pub use command_bus::{CommandBus, CommandSender, StampedCommand};
 pub use engine::Engine;

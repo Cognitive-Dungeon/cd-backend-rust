@@ -1,0 +1,18 @@
+{
+    "door_closed": FurnitureDef(
+        id: 0,
+        slug: "door_closed",
+        name: "Закрытая дверь",
+        glyph: ('+', "#CD853F"),
+        is_solid: true,
+        is_opaque: true,
+    ),
+    "chest": FurnitureDef(
+        id: 1,
+        slug: "chest",
+        name: "Сундук",
+        glyph: ('■', "#D2991E"),
+        is_solid: true,
+        is_opaque: false,
+    ),
+}

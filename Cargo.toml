@@ -38,6 +38,7 @@ strip = false
 # local
 cd-common = { path = "crates/shared/cd-common" }
 cd-core = { path = "crates/shared/cd-core" }
+cd-brp = { path = "crates/shared/cd-brp" }
 
 cd-ecs = { path = "crates/game/cd-ecs" }
 cd-map = { path = "crates/game/cd-map" }

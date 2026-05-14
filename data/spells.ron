@@ -1,0 +1,10 @@
+{
+    "melee_attack": SpellDef(
+        id: 1,
+        slug: "melee_attack",
+        name: "Melee Attack",
+        target: self_, // enum (маленькими буквами из-за rename_all="snake_case")
+        range: 1,
+        effect: damage(amount: 0, damage_type: physical),
+    ),
+}

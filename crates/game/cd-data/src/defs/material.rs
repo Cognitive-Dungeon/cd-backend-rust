@@ -1,36 +1,28 @@
-use super::parse_glyph;
-use crate::depot::{FromDepotLine, Line};
 use cd_common::Glyph;
 use cd_map::{MaterialID, TileFlags};
+use serde::Deserialize;
 
-/// Определение материала (тайла карты)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct MaterialDef {
-    pub id: MaterialID, // u16 (из cd-map)
+    pub id: MaterialID,
     pub slug: String,
     pub name: String,
     pub desc: String,
+    #[serde(deserialize_with = "crate::utils::deserialize_glyph")]
     pub glyph: Glyph,
-    pub flags: TileFlags,
+    pub is_solid: bool,
+    pub is_opaque: bool,
 }
 
-impl FromDepotLine for MaterialDef {
-    fn from_depot_line(line: &Line<'_>) -> Result<Self, String> {
-        let mut flags = TileFlags::empty();
-        if line.bool("is_solid") {
-            flags |= TileFlags::SOLID;
+impl MaterialDef {
+    pub fn flags(&self) -> TileFlags {
+        let mut f = TileFlags::empty();
+        if self.is_solid {
+            f |= TileFlags::SOLID;
         }
-        if line.bool("is_opaque") {
-            flags |= TileFlags::OPAQUE;
+        if self.is_opaque {
+            f |= TileFlags::OPAQUE;
         }
-
-        Ok(Self {
-            id: line.id().parse::<MaterialID>().unwrap_or(0),
-            slug: line.text("slug").to_string(),
-            name: line.text("name").to_string(),
-            desc: line.text("desc").to_string(),
-            glyph: parse_glyph(line),
-            flags,
-        })
+        f
     }
 }

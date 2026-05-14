@@ -1,8 +1,5 @@
 use bevy_ecs::prelude::*;
-use cd_data::{
-    defs::{CreatureId, FurnitureId, SpellDef, SpellId},
-    depot::Depot,
-};
+use cd_data::defs::{CreatureId, FurnitureId, SpellDef, SpellId, furniture};
 use cd_ecs::SpatialGrid;
 use cd_map::{MaterialID, WorldMap};
 use cd_telemetry::TelemetrySink;
@@ -16,13 +13,13 @@ use crate::world::defs::{CreatureDef, FurnitureDef, MaterialDef};
 /// Обертка над картой мира для ECS
 #[derive(Resource)]
 pub struct MapResource {
-    pub inner: WorldMap,
+    pub inner: cd_map::WorldMap,
 }
 
 /// Обертка над пространственной сеткой для ECS
 #[derive(Resource)]
 pub struct GridResource {
-    pub inner: SpatialGrid,
+    pub inner: cd_ecs::SpatialGrid,
 }
 
 /// Обертка над реестром (ObjectGuid <-> Entity)
@@ -31,11 +28,10 @@ pub struct RegistryResource {
     pub inner: cd_ecs::EntityRegistry,
 }
 
-/// Данные игры (Depot). Используем Arc<RwLock>, так как он может
-/// перезагружаться на лету (hot-reload) из файла.
+/// Данные игры.
 #[derive(Resource, Clone)]
 pub struct GameDataResource {
-    pub depot: Arc<RwLock<Option<Depot>>>,
+    pub provider: Arc<dyn cd_data::provider::DataProvider>,
 }
 
 /// Контекст тика (RNG и номер тика)
@@ -46,7 +42,7 @@ pub struct TickResource {
 }
 
 #[derive(Resource)]
-pub struct TelemetryResource(pub Arc<dyn TelemetrySink>);
+pub struct TelemetryResource(pub Arc<dyn cd_telemetry::TelemetrySink>);
 
 #[derive(Resource, Default)]
 pub struct DefsCache {
@@ -63,50 +59,58 @@ pub struct DefsCache {
 }
 
 impl DefsCache {
-    /// Заполняет кэш из распарсенного Depot
-    pub fn rebuild_from(&mut self, depot: &cd_data::depot::Depot) {
-        if let Some(sheet) = depot.sheet("Creatures") {
-            let defs = sheet.load_all::<CreatureDef>();
-            self.creatures.clear();
-            self.slug_to_creature.clear();
-            for def in defs {
-                self.slug_to_creature.insert(def.slug.clone(), def.id);
-                self.creatures.insert(def.id, def);
+    /// Заполняет кэш из распарсенного Провайдера
+    pub fn rebuild_from(&mut self, provider: &dyn cd_data::provider::DataProvider) {
+        match provider.load_creatures() {
+            Ok(creatures) => {
+                self.creatures.clear();
+                self.slug_to_creature.clear();
+                for (_, def) in creatures {
+                    self.slug_to_creature.insert(def.slug.clone(), def.id);
+                    self.creatures.insert(def.id, def);
+                }
+                tracing::info!("Loaded {} creatures", self.creatures.len());
             }
-            tracing::info!("Loaded {} creatures", self.creatures.len());
+            Err(e) => tracing::error!("Failed to load creatures: {}", e),
         }
 
-        if let Some(sheet) = depot.sheet("Furniture") {
-            let defs = sheet.load_all::<FurnitureDef>();
-            self.furniture.clear();
-            self.slug_to_furniture.clear();
-            for def in defs {
-                self.slug_to_furniture.insert(def.slug.clone(), def.id);
-                self.furniture.insert(def.id, def);
+        match provider.load_materials() {
+            Ok(materials) => {
+                self.materials.clear();
+                self.slug_to_material.clear();
+                for (_, def) in materials {
+                    self.slug_to_material.insert(def.slug.clone(), def.id);
+                    self.materials.insert(def.id, def);
+                }
+                tracing::info!("Loaded {} materials", self.materials.len());
             }
-            tracing::info!("Loaded {} furniture items", self.furniture.len());
+            Err(e) => tracing::error!("Failed to load materials: {}", e),
         }
 
-        if let Some(sheet) = depot.sheet("Materials") {
-            let defs = sheet.load_all::<MaterialDef>();
-            self.materials.clear();
-            self.slug_to_material.clear();
-            for def in defs {
-                self.slug_to_material.insert(def.slug.clone(), def.id);
-                self.materials.insert(def.id, def);
+        match provider.load_furniture() {
+            Ok(furniture) => {
+                self.furniture.clear();
+                self.slug_to_furniture.clear();
+                for (_, def) in furniture {
+                    self.slug_to_furniture.insert(def.slug.clone(), def.id);
+                    self.furniture.insert(def.id, def);
+                }
+                tracing::info!("Loaded {} furniture items", self.furniture.len());
             }
-            tracing::info!("Loaded {} materials", self.materials.len());
+            Err(e) => tracing::error!("Failed to load furniture: {}", e),
         }
 
-        if let Some(sheet) = depot.sheet("Spells") {
-            let defs = sheet.load_all::<SpellDef>();
-            self.spells.clear();
-            self.slug_to_spell.clear();
-            for def in defs {
-                self.slug_to_spell.insert(def.slug.clone(), def.id);
-                self.spells.insert(def.id, def);
+        match provider.load_spells() {
+            Ok(spells) => {
+                self.spells.clear();
+                self.slug_to_spell.clear();
+                for (_, def) in spells {
+                    self.slug_to_spell.insert(def.slug.clone(), def.id);
+                    self.spells.insert(def.id, def);
+                }
+                tracing::info!("Loaded {} spells", self.spells.len());
             }
-            tracing::info!("Loaded {} spells", self.spells.len());
+            Err(e) => tracing::error!("Failed to load spells: {}", e),
         }
     }
 }

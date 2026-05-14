@@ -4,19 +4,17 @@ use crate::world::resources::*;
 use crate::{StampedCommand, systems::intents::IntentCastSpell};
 use bevy_ecs::message::Messages;
 use bevy_ecs::prelude::*;
-use cd_data::depot::Depot;
+use cd_data::provider::DataProvider;
 use cd_ecs::SpatialGrid;
 use cd_map::WorldMap;
 use cd_telemetry::{EngineEvent, TelemetrySink};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 pub struct Engine {
     // Вся память игры здесь (Сущности + Ресурсы)
     pub world: World,
     // Планировщик, который знает, в каком порядке запускать системы
     pub schedule: Schedule,
-    // Сохраняем handle на Depot, чтобы файл-вотчер мог его обновлять
-    game_data: Arc<RwLock<Option<Depot>>>,
     pub(crate) telemetry: Arc<dyn TelemetrySink>,
     pub(crate) world_repo: Option<Arc<dyn cd_data::WorldRepository>>,
     entity_repo: Option<Arc<dyn cd_data::EntityRepository>>,
@@ -29,7 +27,7 @@ impl Engine {
         telemetry: Arc<dyn TelemetrySink>,
         world_repo: Option<Arc<dyn cd_data::WorldRepository>>,
         entity_repo: Option<Arc<dyn cd_data::EntityRepository>>,
-        game_data: Arc<RwLock<Option<Depot>>>,
+        data_provider: Arc<dyn DataProvider>,
     ) -> Self {
         let mut world = World::new();
         world.insert_resource(MapResource {
@@ -39,7 +37,7 @@ impl Engine {
             inner: SpatialGrid::new(),
         });
         world.insert_resource(GameDataResource {
-            depot: Arc::clone(&game_data),
+            provider: data_provider,
         });
         world.insert_resource(RegistryResource::default());
         world.insert_resource(TickResource {
@@ -58,7 +56,6 @@ impl Engine {
             world,
             schedule: Schedule::default(),
             telemetry,
-            game_data,
             world_repo,
             entity_repo,
         }
@@ -84,48 +81,16 @@ impl Engine {
         self.schedule.add_systems(system);
     }
 
-    /// Клонируемый handle на Depot — для передачи в file watcher и API.
-    pub fn game_data_handle(&self) -> Arc<RwLock<Option<Depot>>> {
-        Arc::clone(&self.game_data)
-    }
-
-    /// Перезагрузить данные из файла (вызывается file watcher'ом или VS Code).
-    pub fn reload_game_data(&self, path: &std::path::Path) {
-        match Depot::load(path) {
-            Ok(depot) => {
-                *self.game_data.write().unwrap() = Some(depot);
-                tracing::info!("Depot reloaded from {:?}", path);
-                self.telemetry
-                    .emit(cd_telemetry::EngineEvent::ErrorIsolated {
-                        tick_id: self.current_tick().0,
-                        context: "depot_reload".to_string(),
-                        error: format!("Depot reloaded from {:?}", path),
-                    });
-            }
-            Err(e) => {
-                tracing::error!("Failed to reload depot: {}", e);
-                self.telemetry
-                    .emit(cd_telemetry::EngineEvent::ErrorIsolated {
-                        tick_id: self.current_tick().0,
-                        context: "depot_reload".to_string(),
-                        error: e.to_string(),
-                    });
-            }
-        }
-    }
-
-    /// Принудительно заставляет ECS перечитать данные из Depot в DefsCache
+    /// Принудительно заставляет ECS перечитать данные через DataProvider в DefsCache
     pub fn rebuild_cache(&mut self) {
         self.world
             .resource_scope(|world, mut cache: Mut<DefsCache>| {
-                let game_data_res = world.get_resource::<GameDataResource>().unwrap();
-                let guard = game_data_res.depot.read().unwrap();
+                let game_data_res = world
+                    .get_resource::<GameDataResource>()
+                    .expect("GameDataResource must be present!");
 
-                if let Some(depot) = guard.as_ref() {
-                    cache.rebuild_from(depot);
-                } else {
-                    tracing::warn!("rebuild_cache called, but Depot is empty!");
-                }
+                // Провайдер сам сходит на диск/в БД и обновит кэш.
+                cache.rebuild_from(game_data_res.provider.as_ref());
             });
     }
 

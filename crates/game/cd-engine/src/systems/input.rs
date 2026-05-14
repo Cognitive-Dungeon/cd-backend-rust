@@ -8,7 +8,7 @@ use crate::{
     systems::intents::{IntentCastSpell, IntentEndTurn, IntentMove},
     world::{
         factory::EntityFactoryExt,
-        resources::{DefsCache, TelemetryResource, TickResource},
+        resources::{DefsCache, GameDataResource, TelemetryResource, TickResource},
         subsystems::SpatialSubsystem,
     },
 };
@@ -18,7 +18,8 @@ pub fn handle_input_system(
     mut commands: Commands,
     mut intent_move_writer: MessageWriter<IntentMove>,
     mut spatial: SpatialSubsystem,
-    defs: Res<DefsCache>,
+    mut defs: ResMut<DefsCache>,
+    provider: Res<GameDataResource>,
     telemetry: Res<TelemetryResource>,
     tick: Res<TickResource>,
     mut intent_cast_writer: MessageWriter<IntentCastSpell>,
@@ -99,6 +100,12 @@ pub fn handle_input_system(
                     tracing::info!("InputSystem: IntentEndTurn dispatched for {}", entity_guid);
                     intent_end_turn_writer.write(IntentEndTurn { entity });
                 }
+            }
+
+            InputCmd::ReloadData => {
+                tracing::info!("Hot-reloading game data from disk...");
+                defs.rebuild_from(provider.provider.as_ref());
+                tracing::info!("Hot-reload complete.");
             }
             _ => {}
         }

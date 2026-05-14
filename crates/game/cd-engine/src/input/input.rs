@@ -22,4 +22,5 @@ pub enum InputCmd {
     EndTurn {
         entity_guid: ObjectGuid,
     },
+    ReloadData,
 }

@@ -1,0 +1,32 @@
+{
+    "human": CreatureDef(
+        id: 0,
+        slug: "human",
+        name: "Человек",
+        desc: "Искатель приключений.",
+        glyph: ('@', "#228b22"),
+        base_hp: 100,
+        base_mp: 100,
+        speed: 100,
+    ),
+    "rat_sewer": CreatureDef(
+        id: 1,
+        slug: "rat_sewer",
+        name: "Крыса",
+        desc: "Огромная канализационная крыса.",
+        glyph: ('r', "#8B4513"),
+        base_hp: 15,
+        base_mp: 0,
+        speed: 120,
+    ),
+    "skeleton": CreatureDef(
+        id: 2,
+        slug: "skeleton",
+        name: "Скелет",
+        desc: "Восставший из мертвых.",
+        glyph: ('s', "#EEEEEE"),
+        base_hp: 40,
+        base_mp: 0,
+        speed: 80,
+    ),
+}

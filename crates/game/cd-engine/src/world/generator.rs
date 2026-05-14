@@ -31,13 +31,13 @@ impl WorldGenerator {
         // 2. Создаем из них тайлы (Tile) для карты
         let t_floor = Tile {
             material: floor_mat.id,
-            flags: floor_mat.flags,
+            flags: floor_mat.flags(),
             variant: 0,
         };
 
         let t_wall = Tile {
             material: wall_mat.id,
-            flags: wall_mat.flags,
+            flags: wall_mat.flags(),
             variant: 0,
         };
 

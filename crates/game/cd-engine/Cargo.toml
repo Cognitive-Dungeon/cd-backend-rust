@@ -11,6 +11,7 @@ cd-ecs = { workspace = true }
 cd-map = { workspace = true }
 cd-telemetry = { workspace = true }
 cd-data = { workspace = true }
+cd-brp = { workspace = true }
 notify = { workspace = true }
 bevy_ecs = { workspace = true }
 tracing = { workspace = true }
