@@ -13,7 +13,7 @@ cd-net = { workspace = true }
 cd-data = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 anyhow = { workspace = true }
 bevy = { workspace = true, optional = true }
 bevy-inspector-egui = { workspace = true, optional = true }
@@ -24,4 +24,4 @@ workspace = true
 
 [features]
 default = []
-dev_editor = ["bevy", "bevy-inspector-egui"]
+dev_editor = ["bevy", "bevy-inspector-egui", "cd-core/dev_editor"]

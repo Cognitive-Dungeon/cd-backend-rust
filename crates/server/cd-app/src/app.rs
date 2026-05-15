@@ -11,9 +11,8 @@ use tokio::sync::{broadcast, oneshot};
 use tracing::info;
 
 pub fn run() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+    let filter = tracing_subscriber::EnvFilter::new("info,wgpu=warn,wgpu_hal=error,naga=warn");
+    tracing_subscriber::fmt().with_env_filter(filter).init();
     info!("🚀 Booting Cognitive Dungeon...");
 
     // 1. Инициализируем Tokio вручную, чтобы он ушел в фон
@@ -60,15 +59,22 @@ pub fn run() -> Result<()> {
     {
         use bevy::app::PluginGroup;
 
-        app.add_plugins(bevy::DefaultPlugins.set(bevy::window::WindowPlugin {
-            primary_window: Some(bevy::window::Window {
-                title: "CD Engine - God Mode".to_string(),
-                ..Default::default()
-            }),
-            ..Default::default()
-        }));
+        app.add_plugins(
+            bevy::DefaultPlugins
+                .build()
+                .disable::<bevy::log::LogPlugin>()
+                .set(bevy::window::WindowPlugin {
+                    primary_window: Some(bevy::window::Window {
+                        title: "CD Engine - God Mode".to_string(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+        );
         app.add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default());
-        app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
+        app.add_plugins(bevy_inspector_egui::quick::FilterQueryInspectorPlugin::<
+            bevy::ecs::query::With<cd_ecs::Guid>,
+        >::default());
 
         cd_core::editor::register_core_editor_uis(&mut app);
     }
