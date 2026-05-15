@@ -38,7 +38,7 @@ pub fn update_vitals_system(mut anatomy_query: Query<&mut Anatomy>) {
         }
 
         // 3. Гиповолемический шок (потеря > 50% крови = обморок)
-        let max_blood = 1000.0; // TODO: Брать из SIZ
+        let max_blood = anatomy.substances.max_blood_volume.max(1.0); // Защита от деления на 0
         let blood_loss_percent =
             1.0 - (anatomy.substances.blood_volume / max_blood).clamp(0.0, 1.0);
 

@@ -15,6 +15,7 @@ pub struct DamageMessage {
     pub location: HitLocationType,
     pub raw_damage: i32,
     pub penetration: PenetrationProfile,
+    pub timestamp_secs: f64,
 }
 
 /// Система, которая слушает входящий урон и применяет его к анатомии.
@@ -37,6 +38,7 @@ pub fn apply_damage_system(
             message.location,
             message.raw_damage,
             message.penetration.clone(),
+            message.timestamp_secs,
         );
 
         // В будущем здесь можно генерировать исходящие события (например, BloodSplatterEvent)

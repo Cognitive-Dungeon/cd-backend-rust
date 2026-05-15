@@ -20,7 +20,7 @@ pub struct Anatomy {
 }
 
 impl Anatomy {
-    pub fn new_humanoid(total_hp: i32) -> Self {
+    pub fn new_humanoid(total_hp: i32, siz: i32) -> Self {
         let mut parts = HashMap::new();
         for loc in [
             HitLocationType::RightLeg,
@@ -33,11 +33,14 @@ impl Anatomy {
         ] {
             parts.insert(loc, BodyPart::new(total_hp, loc, 0));
         }
+        let mut substance_pool = SubstancePool::default_human();
+        substance_pool.max_blood_volume = SubstancePool::calculate_blood_volume_by_siz(siz);
+        substance_pool.blood_volume = SubstancePool::calculate_blood_volume_by_siz(siz);
         Self {
             total_hp,
             current_hp: total_hp,
             parts,
-            substances: SubstancePool::default_human(),
+            substances: substance_pool,
             vitals: VitalStats::default(),
         }
     }
@@ -63,7 +66,7 @@ impl Anatomy {
     /// Legacy BRP-метод (возвращает i32 для совместимости)
     pub fn apply_damage(&mut self, location: HitLocationType, raw_damage: i32) -> i32 {
         let profile = PenetrationProfile::blunt();
-        self.apply_damage_detailed(location, raw_damage, profile)
+        self.apply_damage_detailed(location, raw_damage, profile, 0.0)
             .damage_dealt()
     }
 
@@ -73,6 +76,7 @@ impl Anatomy {
         location: HitLocationType,
         raw_damage: i32,
         penetration: PenetrationProfile,
+        timestamp_secs: f64,
     ) -> DamageResult {
         let Some(part) = self.parts.get_mut(&location) else {
             return DamageResult::Missed;
@@ -157,7 +161,7 @@ impl Anatomy {
             } else {
                 0.15
             },
-            created_at: 0.0, // TODO: Передать текущее время
+            created_at: timestamp_secs,
         };
 
         part.wounds.push(wound);
