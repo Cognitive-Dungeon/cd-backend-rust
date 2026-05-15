@@ -1,7 +1,7 @@
 pub mod builder;
 pub use builder::SnapshotBuilder;
 
-use cd_common::Glyph;
+use cd_core::Glyph;
 use cd_core::ObjectGuid;
 
 /// Плоское представление сущности для сетевого слоя.

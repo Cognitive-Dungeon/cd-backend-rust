@@ -1,4 +1,4 @@
-use cd_common::Glyph;
+use cd_core::Glyph;
 use serde::Deserialize;
 
 /// Позволяет десериализовать кортеж ('A', "#FFFFFF") напрямую в Glyph

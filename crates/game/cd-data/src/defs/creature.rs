@@ -1,5 +1,5 @@
 use super::define_id;
-use cd_common::Glyph;
+use cd_core::Glyph;
 use serde::Deserialize;
 
 define_id!(CreatureId);

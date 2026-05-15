@@ -1,4 +1,4 @@
-use cd_common::Glyph;
+use cd_core::Glyph;
 use cd_map::{MaterialID, TileFlags};
 use serde::Deserialize;
 

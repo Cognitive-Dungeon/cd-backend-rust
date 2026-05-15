@@ -1,5 +1,5 @@
 use bevy::ecs::prelude::*;
-use cd_common::Glyph;
+use cd_core::Glyph;
 use cd_ecs::{
     Stats,
     components::{Position, Render},

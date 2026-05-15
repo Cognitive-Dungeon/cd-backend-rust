@@ -36,7 +36,6 @@ strip = false
 [workspace.dependencies]
 
 # local
-cd-common = { path = "crates/shared/cd-common" }
 cd-core = { path = "crates/shared/cd-core" }
 cd-brp = { path = "crates/shared/cd-brp" }
 
@@ -101,4 +100,4 @@ default = ["server"]
 server = []
 tools = []
 bench = []
-dev_editor = ["cd-app/dev_editor", "cd-common/dev_editor"]
+dev_editor = ["cd-app/dev_editor", "cd-core/dev_editor"]

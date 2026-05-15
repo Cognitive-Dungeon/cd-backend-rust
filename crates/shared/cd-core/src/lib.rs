@@ -1,9 +1,13 @@
 pub mod geo;
+pub mod glyph;
 pub mod grid;
 pub mod guid;
 pub mod tile_pos;
 
+pub mod editor;
+
 pub use geo::WorldPos;
+pub use glyph::Glyph;
 pub use grid::Direction;
 pub use grid::line::{line, line_exclusive, ray};
 pub use grid::neighbors::{

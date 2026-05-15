@@ -2090,7 +2090,6 @@ dependencies = [
  "anyhow",
  "bevy",
  "bevy-inspector-egui",
- "cd-common",
  "cd-core",
  "cd-data",
  "cd-ecs",
@@ -2116,19 +2115,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cd-common"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy-inspector-egui",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "cd-core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy-inspector-egui",
  "rkyv",
  "serde",
  "thiserror 2.0.18",
@@ -2140,7 +2131,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "cd-brp",
- "cd-common",
  "cd-core",
  "cd-map",
  "ron",
@@ -2157,7 +2147,6 @@ dependencies = [
  "ahash 0.8.12",
  "bevy",
  "cd-brp",
- "cd-common",
  "cd-core",
  "cd-data",
  "cd-map",
@@ -2170,7 +2159,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "cd-brp",
- "cd-common",
  "cd-core",
  "cd-data",
  "cd-ecs",
@@ -2204,7 +2192,6 @@ dependencies = [
  "axum",
  "bevy",
  "cd-brp",
- "cd-common",
  "cd-core",
  "cd-ecs",
  "cd-engine",

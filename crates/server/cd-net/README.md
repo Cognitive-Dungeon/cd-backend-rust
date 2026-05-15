@@ -29,7 +29,7 @@
 
 ## Зависит от
 
-- `cd-core`, `cd-common`
+- `cd-core`
 - `cd-ecs`, `cd-engine`
 - `cd-telemetry`
 - `bevy_ecs`

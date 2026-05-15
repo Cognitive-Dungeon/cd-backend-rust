@@ -1,6 +1,6 @@
 use bevy::ecs::{component::Component, entity::Entity};
 use bevy::reflect::Reflect;
-use cd_core::{ObjectGuid, WorldPos};
+use cd_core::{Glyph, ObjectGuid, WorldPos};
 use cd_data::defs::{CreatureId, FurnitureId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Component, Reflect)]
@@ -21,7 +21,7 @@ pub struct Stats {
 /// В Go: RenderComponent { Glyph }
 #[derive(Debug, Clone, Copy, Component, Reflect)]
 pub struct Render {
-    pub glyph: cd_common::Glyph,
+    pub glyph: Glyph,
 }
 
 #[derive(Debug, Clone, Component, Reflect)]

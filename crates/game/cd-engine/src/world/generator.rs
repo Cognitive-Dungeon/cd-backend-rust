@@ -1,6 +1,5 @@
 use bevy::ecs::{name::Name, world::Mut};
-use cd_common::Glyph;
-use cd_core::{ObjectGuid, WorldPos};
+use cd_core::{Glyph, ObjectGuid, WorldPos};
 use cd_ecs::{Guid, Position, Render, Stats};
 use cd_map::{Chunk, Tile};
 

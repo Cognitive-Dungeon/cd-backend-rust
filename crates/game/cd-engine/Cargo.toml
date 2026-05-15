@@ -6,7 +6,6 @@ authors.workspace = true
 
 [dependencies]
 cd-core = { workspace = true }
-cd-common = { workspace = true }
 cd-ecs = { workspace = true }
 cd-map = { workspace = true }
 cd-telemetry = { workspace = true }

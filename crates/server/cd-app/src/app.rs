@@ -70,7 +70,7 @@ pub fn run() -> Result<()> {
         app.add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default());
         app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
 
-        cd_common::editor::register_common_editor_uis(&mut app);
+        cd_core::editor::register_core_editor_uis(&mut app);
     }
 
     // -- ПРОДАКШЕН РЕЖИМ (Без графики, 20 TPS) --
