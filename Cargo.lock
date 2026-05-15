@@ -2110,6 +2110,7 @@ dependencies = [
  "rand 0.10.1",
  "seahash",
  "serde",
+ "serde_json",
  "thiserror 2.0.18",
  "tracing",
 ]

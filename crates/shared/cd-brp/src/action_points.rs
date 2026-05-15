@@ -18,11 +18,14 @@ impl ActionPoints {
         let left_leg = anatomy.parts.get(&HitLocationType::LeftLeg);
         let right_leg = anatomy.parts.get(&HitLocationType::RightLeg);
 
-        let is_leg_fractured = left_leg.is_some_and(|l| l.injuries.contains(&Injury::Fractured))
-            || right_leg.is_some_and(|r| r.injuries.contains(&Injury::Fractured));
+        let is_leg_fractured = left_leg.is_some_and(|l: &crate::anatomy::BodyPart| {
+            l.injuries.contains(&crate::anatomy::Injury::Fractured)
+        }) || right_leg.is_some_and(|r: &crate::anatomy::BodyPart| {
+            r.injuries.contains(&crate::anatomy::Injury::Fractured)
+        });
 
-        let is_leg_severed = left_leg.is_some_and(|l| l.is_destroyed())
-            || right_leg.is_some_and(|r| r.is_destroyed());
+        let is_leg_severed = left_leg.is_some_and(|l: &crate::anatomy::BodyPart| l.is_destroyed())
+            || right_leg.is_some_and(|r: &crate::anatomy::BodyPart| r.is_destroyed());
 
         if is_leg_severed {
             base_ap /= 4; // Ползком
