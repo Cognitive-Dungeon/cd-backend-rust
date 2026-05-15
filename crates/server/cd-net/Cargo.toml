@@ -10,7 +10,7 @@ cd-engine = { workspace = true }
 cd-telemetry = { workspace = true }
 cd-common = { workspace = true }
 cd-ecs = { workspace = true }
-bevy_ecs = { workspace = true }
+bevy = { workspace = true }
 tokio = { workspace = true }
 axum = { version = "0.8.8", features = ["ws"] } # Web framework + WebSockets
 serde = { workspace = true }

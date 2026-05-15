@@ -111,7 +111,7 @@ impl WorldMap {
         let rx = (cx & REGION_MASK) as usize;
         let ry = (cy & REGION_MASK) as usize;
 
-        let mut region = self.regions.entry(region_key).or_insert_with(Region::new);
+        let mut region = self.regions.entry(region_key).or_default();
         let dest_chunk = region.get_or_create_chunk(rx, ry);
         *dest_chunk = chunk;
     }

@@ -72,9 +72,8 @@ anyhow = "1.0.102"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 
-# ecs
-bevy_ecs = { version = "0.18.1" }
-bevy_reflect = { version = "0.18.1" }
+bevy = { version = "0.18.1" }
+bevy-inspector-egui = { version = "0.36.0" }
 
 # math
 glam = "0.32.1"
@@ -102,3 +101,4 @@ default = ["server"]
 server = []
 tools = []
 bench = []
+dev_editor = ["cd-app/dev_editor", "cd-common/dev_editor"]

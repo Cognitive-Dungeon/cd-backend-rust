@@ -1,4 +1,4 @@
-use bevy_ecs::prelude::*;
+use bevy::ecs::prelude::*;
 use cd_core::WorldPos;
 use cd_ecs::Position;
 use cd_telemetry::EngineEvent;

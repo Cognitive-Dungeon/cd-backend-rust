@@ -1,5 +1,7 @@
-use bevy_ecs::component::Component;
-use bevy_ecs::prelude::*;
+use bevy::ecs::component::Component;
+use bevy::ecs::entity::Entity;
+use bevy::ecs::query::{Changed, Or};
+use bevy::ecs::system::Query;
 use serde::{Deserialize, Serialize};
 
 use crate::characteristics::Characteristics;

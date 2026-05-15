@@ -1,4 +1,4 @@
-use cd_map::{CHUNK_AREA, Chunk, TileFlags};
+use cd_map::{CHUNK_AREA, Chunk};
 use serde::{Deserialize, Serialize};
 
 /// JSON-представление чанка.

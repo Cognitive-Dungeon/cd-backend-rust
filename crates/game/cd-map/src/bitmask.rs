@@ -1,14 +1,8 @@
 // Выравниваем маску по 32 байта для AVX инструкций (хотя используем u64)
 #[repr(C, align(32))]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct BitMask256 {
     pub data: [u64; 4],
-}
-
-impl Default for BitMask256 {
-    fn default() -> Self {
-        Self { data: [0; 4] }
-    }
 }
 
 #[allow(unsafe_code)]

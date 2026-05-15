@@ -1,5 +1,6 @@
-use bevy_ecs::prelude::*;
-use bevy_ecs::system::SystemParam;
+use bevy::ecs::entity::Entity;
+use bevy::ecs::prelude::*;
+use bevy::ecs::system::SystemParam;
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::defs::SpellEffect;
 use cd_ecs::{CombatBubble, Guid, InCombat, IsDead, Stats};
@@ -59,7 +60,7 @@ pub struct CombatSubsystem<'w, 's> {
     // Дробим один огромный Query на маленькие и независимые!
     stats: Query<'w, 's, &'static mut Stats>,
     dead: Query<'w, 's, &'static IsDead>,
-    names: Query<'w, 's, &'static cd_ecs::components::Name>,
+    names: Query<'w, 's, &'static Name>,
     guids: Query<'w, 's, &'static Guid>,
 
     in_combat: Query<'w, 's, &'static mut InCombat>,
@@ -118,8 +119,8 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
         let name_str = self
             .names
             .get(target)
-            .map(|n| n.0.clone())
-            .unwrap_or_else(|_| "Unknown".to_string());
+            .cloned()
+            .unwrap_or_else(|_| "Unknown".into());
 
         stats.hp = (stats.hp - amount).max(0);
         tracing::info!(target = %guid, name = %name_str, damage = amount, hp_left = stats.hp, "Damage applied");
@@ -163,8 +164,8 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
         let name_str = self
             .names
             .get(target)
-            .map(|n| n.0.clone())
-            .unwrap_or_else(|_| "Unknown".to_string());
+            .cloned()
+            .unwrap_or_else(|_| "Unknown".into());
 
         tracing::info!(target = %guid, name = %name_str, heal = amount, hp = stats.hp, "Heal applied");
     }
@@ -260,11 +261,7 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
                 movement_points: 10, // Стартовые MP
             });
 
-            let name = self
-                .names
-                .get(actor)
-                .map(|n| n.0.clone())
-                .unwrap_or_default();
+            let name = self.names.get(actor).cloned().unwrap_or_default();
             tracing::info!("🛡️ {} joined the combat!", name);
         }
 

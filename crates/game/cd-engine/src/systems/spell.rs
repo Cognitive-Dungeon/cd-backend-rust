@@ -1,4 +1,4 @@
-use bevy_ecs::prelude::*;
+use bevy::ecs::prelude::*;
 use cd_data::defs::SpellTarget;
 use cd_ecs::Guid;
 use cd_ecs::components::Position;

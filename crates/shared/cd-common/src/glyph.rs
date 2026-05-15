@@ -25,6 +25,7 @@ pub enum GlyphError {
 /// - [0..8] биты: Символ (CP437)
 /// - [8..32] биты: Цвет RGB (24 бита)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "bevy", derive(bevy::reflect::Reflect))]
 pub struct Glyph(u32);
 
 impl Glyph {

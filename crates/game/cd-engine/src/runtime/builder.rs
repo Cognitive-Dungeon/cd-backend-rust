@@ -1,7 +1,7 @@
 use crate::engine::Engine;
 use cd_data::{EntityRepository, WorldRepository, provider::DataProvider};
 use cd_telemetry::{NullSink, TelemetrySink};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 /// Builder для Engine — единственное место, где собираются зависимости.
 /// Добавить новую зависимость = добавить поле + метод здесь.

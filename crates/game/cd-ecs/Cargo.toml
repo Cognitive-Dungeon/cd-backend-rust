@@ -10,9 +10,9 @@ cd-common = { workspace = true }
 cd-map = { workspace = true }
 cd-data = { workspace = true }
 cd-brp = { workspace = true }
-bevy_ecs = { workspace = true }
 serde = { workspace = true }
 ahash = { workspace = true }
+bevy = { workspace = true }
 
 [lints]
 workspace = true

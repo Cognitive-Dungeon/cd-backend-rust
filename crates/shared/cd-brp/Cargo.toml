@@ -7,10 +7,7 @@ authors.workspace = true
 [dependencies]
 cd-core = { workspace = true, features = ["bevy"] }
 serde = { workspace = true }
-bevy_ecs = { workspace = true }
-bevy_reflect = "0.18.1"
-bevy_derive = "0.18.1"
-bevy_app = "0.18.1"
+bevy = { workspace = true }
 rand = "0.10.1"
 thiserror = { workspace = true }
 seahash = "4.1"

@@ -1,4 +1,4 @@
-use bevy_ecs::entity::Entity;
+use bevy::ecs::entity::Entity;
 use cd_core::ObjectGuid;
 use std::collections::HashMap;
 

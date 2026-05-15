@@ -1,4 +1,4 @@
-use bevy_ecs::component::Component;
+use bevy::ecs::component::Component;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

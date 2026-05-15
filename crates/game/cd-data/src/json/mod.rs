@@ -34,7 +34,7 @@ impl WorldRepository for JsonWorldRepository {
             Ok(bytes) => {
                 let dto: ChunkDto = serde_json::from_slice(&bytes)
                     .map_err(|e| DataError::Deserialize(e.to_string()))?;
-                let chunk = dto.into_chunk().map_err(|e| DataError::Deserialize(e))?;
+                let chunk = dto.into_chunk().map_err(DataError::Deserialize)?;
                 Ok(Some(chunk))
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),

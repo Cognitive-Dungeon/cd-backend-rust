@@ -16,7 +16,8 @@ pub struct ParseIdError(pub String);
 /// Реализует FromStr и Display, убирая boilerplate.
 macro_rules! define_id {
     ($name:ident) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+        use bevy::reflect::Reflect;
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Reflect)]
         #[serde(transparent)]
         pub struct $name(pub u32);
 

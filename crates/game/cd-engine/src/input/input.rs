@@ -1,4 +1,4 @@
-use bevy_ecs::message::Message;
+use bevy::ecs::message::Message;
 use cd_core::{Direction, ObjectGuid};
 
 /// Команды, которые меняют состояние мира.

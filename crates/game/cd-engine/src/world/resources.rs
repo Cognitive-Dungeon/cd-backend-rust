@@ -1,12 +1,7 @@
-use bevy_ecs::prelude::*;
-use cd_data::defs::{CreatureId, FurnitureId, SpellDef, SpellId, furniture};
-use cd_ecs::SpatialGrid;
-use cd_map::{MaterialID, WorldMap};
-use cd_telemetry::TelemetrySink;
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use bevy::ecs::prelude::*;
+use cd_data::defs::{CreatureId, FurnitureId, SpellDef, SpellId};
+use cd_map::MaterialID;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::world::defs::{CreatureDef, FurnitureDef, MaterialDef};
 

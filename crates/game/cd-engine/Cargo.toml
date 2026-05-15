@@ -13,7 +13,7 @@ cd-telemetry = { workspace = true }
 cd-data = { workspace = true }
 cd-brp = { workspace = true }
 notify = { workspace = true }
-bevy_ecs = { workspace = true }
+bevy = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 rand_chacha = { workspace = true }

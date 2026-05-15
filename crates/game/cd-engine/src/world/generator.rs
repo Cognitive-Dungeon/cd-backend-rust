@@ -1,7 +1,7 @@
-use bevy_ecs::world::Mut;
+use bevy::ecs::{name::Name, world::Mut};
 use cd_common::Glyph;
 use cd_core::{ObjectGuid, WorldPos};
-use cd_ecs::{Guid, Name, Position, Render, Stats};
+use cd_ecs::{Guid, Position, Render, Stats};
 use cd_map::{Chunk, Tile};
 
 use crate::{
@@ -62,7 +62,7 @@ impl WorldGenerator {
 
     /// Спавнит тестового моба прямо в ECS.
     /// Временный метод — уберём когда появится нормальная система спавна.
-    pub fn spawn_test_mob(world: &mut bevy_ecs::world::World) {
+    pub fn spawn_test_mob(world: &mut bevy::ecs::world::World) {
         let guid = ObjectGuid::new(1, 2, 1, 9999); // фиксированный тестовый guid
         let pos = WorldPos::new(3, 3, 0); // внутри тестовой комнаты
 
@@ -70,7 +70,7 @@ impl WorldGenerator {
             .spawn((
                 Guid(guid),
                 Position(pos),
-                Name("Test Goblin".to_string()),
+                Name::new("Test Goblin"),
                 Render {
                     glyph: Glyph::new(0x00FF00, b'g'),
                 },

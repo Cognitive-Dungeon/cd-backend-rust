@@ -1,4 +1,4 @@
-use bevy_ecs::component::Component;
+use bevy::ecs::component::Component;
 
 #[derive(Debug, Clone, Copy, Component)]
 pub struct IsDead;

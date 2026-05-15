@@ -58,7 +58,7 @@ impl Shard {
     ) {
         let mut guard = self.deltas.write().unwrap();
 
-        let delta = guard.entry(chunk_key).or_insert_with(SparseChunk::new);
+        let delta = guard.entry(chunk_key).or_default();
 
         // Lazy initialization масок, если дельта была пустой
         if delta.modifications.is_empty() {

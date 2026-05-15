@@ -7,6 +7,7 @@ use crate::TilePos;
 /// Упакованная координата (X, Y, Z).
 /// Layout: [ Z (12) | Y (26) | X (26) ]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "bevy", derive(bevy::reflect::Reflect))]
 pub struct WorldPos(u64);
 
 // Константы размеров мира (дублируем логику из map для инкапсуляции)

@@ -1,7 +1,7 @@
 use crate::systems::intents::IntentMove;
 use crate::world::subsystems::{CombatSubsystem, SpatialSubsystem};
-use bevy_ecs::message::MessageReader;
-use bevy_ecs::system::Query;
+use bevy::ecs::message::MessageReader;
+use bevy::ecs::system::Query;
 use cd_core::ObjectGuid;
 use cd_ecs::Guid;
 use cd_ecs::components::Position;

@@ -1,6 +1,6 @@
 use crate::anatomy::{Anatomy, HitLocationType, Injury};
 use crate::characteristics::Characteristics;
-use bevy_ecs::component::Component;
+use bevy::ecs::component::Component;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Component, Serialize, Deserialize)]

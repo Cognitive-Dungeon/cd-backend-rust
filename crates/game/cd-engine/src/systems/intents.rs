@@ -1,5 +1,5 @@
-use bevy_ecs::entity::Entity;
-use bevy_ecs::prelude::*;
+use bevy::ecs::entity::Entity;
+use bevy::ecs::prelude::*;
 use cd_core::WorldPos;
 use cd_data::defs::SpellId;
 

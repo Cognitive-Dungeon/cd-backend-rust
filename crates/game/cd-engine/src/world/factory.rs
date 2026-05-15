@@ -1,8 +1,6 @@
-use bevy_ecs::prelude::*;
+use bevy::ecs::prelude::*;
 use cd_core::{ObjectGuid, WorldPos};
-use cd_ecs::components::{
-    Controller, Creature, Door, Furniture, Guid, Name, Position, Render, Stats,
-};
+use cd_ecs::components::{Controller, Creature, Door, Furniture, Guid, Position, Render, Stats};
 
 use crate::world::resources::DefsCache;
 
@@ -56,7 +54,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         let mut entity_cmds = self.spawn((
             Guid(guid),
             Position(pos),
-            Name(name.into()),
+            Name::new(name.into()),
             Creature(id),
             Render { glyph: def.glyph },
             Stats {
@@ -97,7 +95,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         let mut entity_cmds = self.spawn((
             Guid(guid),
             Position(pos),
-            Name(def.name.clone()),
+            Name::new(def.name.clone()),
             Furniture(id),
             Render { glyph: def.glyph },
         ));

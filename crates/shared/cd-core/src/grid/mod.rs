@@ -1,4 +1,3 @@
-use crate::geo::WorldPos;
 use serde::{Deserialize, Serialize};
 
 /// Направления движения.

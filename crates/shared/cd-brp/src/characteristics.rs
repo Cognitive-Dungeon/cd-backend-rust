@@ -1,5 +1,5 @@
 use crate::dice::{DamageModifier, DiceType, Sign};
-use bevy_ecs::component::Component;
+use bevy::ecs::component::Component;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, Component)]

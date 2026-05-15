@@ -6,10 +6,11 @@
 //! - SkillTemporaryModifiers: временные баффы/дебаффы (сервер-авторитет)
 //! - Event-Driven проверки навыков с детерминированным RNG
 
-use bevy_app::{App, FixedUpdate, Plugin};
-use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
-use bevy_reflect::Reflect;
+use bevy::app::{App, FixedUpdate, Plugin};
+use bevy::ecs::prelude::*;
+use bevy::ecs::resource::Resource;
+use bevy::prelude::{Deref, DerefMut};
+use bevy::reflect::Reflect;
 use cd_core::ObjectGuid;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
