@@ -57,20 +57,20 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         };
 
         // 3. Формируем базовый бандл компонентов существа
-        let mut entity_cmds = self.spawn((
-            Guid(guid),
-            Position(pos),
+        let mut entity_cmds = self.spawn(cd_ecs::CreatureBundle {
+            guid: Guid(guid),
             instance,
-            Name::new(name.into()),
-            Creature(id),
-            Render { glyph: def.glyph },
-            Stats {
+            position: Position(pos),
+            name: Name::new(name.into()),
+            render: Render { glyph: def.glyph },
+            creature: Creature(id),
+            stats: Stats {
                 hp: def.base_hp,
                 max_hp: def.base_hp,
                 mana: def.base_mp,
                 max_mana: def.base_mp,
             },
-        ));
+        });
 
         // 4. Довешиваем опциональные компоненты
         if is_player {
@@ -100,14 +100,14 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
             return None;
         };
 
-        let mut entity_cmds = self.spawn((
-            Guid(guid),
-            Position(pos),
+        let mut entity_cmds = self.spawn(cd_ecs::FurnitureBundle {
+            guid: Guid(guid),
             instance,
-            Name::new(def.name.clone()),
-            Furniture(id),
-            Render { glyph: def.glyph },
-        ));
+            position: Position(pos),
+            name: Name::new(def.name.clone()),
+            render: Render { glyph: def.glyph },
+            furniture: Furniture(id),
+        });
 
         // Добавляем специфичную логику (например, для дверей)
         if slug == "door_closed" || slug.starts_with("door") {
