@@ -1,6 +1,9 @@
 use bevy::ecs::prelude::*;
 use cd_core::{ObjectGuid, WorldPos};
-use cd_ecs::components::{Controller, Creature, Door, Furniture, Guid, Position, Render, Stats};
+use cd_ecs::{
+    InstanceId,
+    components::{Controller, Creature, Door, Furniture, Guid, Position, Render, Stats},
+};
 
 use crate::world::resources::DefsCache;
 
@@ -16,6 +19,7 @@ pub trait EntityFactoryExt<'w, 's> {
         name: impl Into<String>,
         defs: &DefsCache,
         is_player: bool,
+        instance: InstanceId,
     ) -> Option<Entity>;
 
     /// Спавнит мебель (двери, сундуки и т.д.).
@@ -25,6 +29,7 @@ pub trait EntityFactoryExt<'w, 's> {
         guid: ObjectGuid,
         pos: WorldPos,
         defs: &DefsCache,
+        instance: InstanceId,
     ) -> Option<Entity>;
 }
 
@@ -37,6 +42,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         name: impl Into<String>,
         defs: &DefsCache,
         is_player: bool,
+        instance: InstanceId,
     ) -> Option<Entity> {
         // 1. Пытаемся найти ID по слагу
         let Some(&id) = defs.slug_to_creature.get(slug) else {
@@ -54,6 +60,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         let mut entity_cmds = self.spawn((
             Guid(guid),
             Position(pos),
+            instance,
             Name::new(name.into()),
             Creature(id),
             Render { glyph: def.glyph },
@@ -81,6 +88,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         guid: ObjectGuid,
         pos: WorldPos,
         defs: &DefsCache,
+        instance: InstanceId,
     ) -> Option<Entity> {
         let Some(&id) = defs.slug_to_furniture.get(slug) else {
             tracing::error!("spawn_furniture: slug '{}' not found in defs", slug);
@@ -95,6 +103,7 @@ impl<'w, 's> EntityFactoryExt<'w, 's> for Commands<'w, 's> {
         let mut entity_cmds = self.spawn((
             Guid(guid),
             Position(pos),
+            instance,
             Name::new(def.name.clone()),
             Furniture(id),
             Render { glyph: def.glyph },

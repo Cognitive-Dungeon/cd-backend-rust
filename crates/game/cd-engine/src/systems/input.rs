@@ -1,6 +1,6 @@
 use bevy::ecs::prelude::*;
 use cd_core::WorldPos;
-use cd_ecs::Position;
+use cd_ecs::{InstanceId, Position};
 use cd_telemetry::EngineEvent;
 
 use crate::{
@@ -31,11 +31,20 @@ pub fn handle_input_system(
             InputCmd::SpawnPlayer { entity_guid, name } => {
                 let pos = WorldPos::new(3, 6, 0);
 
-                if let Some(entity) =
-                    commands.spawn_creature("human", *entity_guid, pos, name.clone(), &defs, true)
-                {
-                    // Обновляем индексы в одну строку!
-                    spatial.register_entity(*entity_guid, entity, pos);
+                // TODO: [Instancing] Определять стартовый инстанс игрока на основе базы данных
+                // или точки выхода (Gateway). Временно используем OVERWORLD.
+                let instance = InstanceId::OVERWORLD;
+
+                if let Some(entity) = commands.spawn_creature(
+                    "human",
+                    *entity_guid,
+                    pos,
+                    name.clone(),
+                    &defs,
+                    true,
+                    instance,
+                ) {
+                    spatial.register_entity(instance, *entity_guid, entity, pos);
 
                     telemetry.0.emit(EngineEvent::EntitySpawned {
                         tick_id: tick.id.0,

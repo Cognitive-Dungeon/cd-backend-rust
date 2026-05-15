@@ -3,7 +3,7 @@ use bevy::ecs::prelude::*;
 use bevy::ecs::system::SystemParam;
 use cd_core::{ObjectGuid, WorldPos};
 use cd_data::defs::SpellEffect;
-use cd_ecs::{CombatBubble, Guid, InCombat, IsDead, Stats};
+use cd_ecs::{CombatBubble, Guid, InCombat, InstanceId, IsDead, Stats};
 use cd_telemetry::EngineEvent;
 
 use crate::world::resources::{
@@ -21,30 +21,47 @@ pub struct SpatialSubsystem<'w> {
 
 impl<'w> SpatialSubsystem<'w> {
     /// Регистрирует сущность в пространственных индексах.
-    pub fn register_entity(&mut self, guid: ObjectGuid, entity: Entity, pos: WorldPos) {
+    pub fn register_entity(
+        &mut self,
+        instance: InstanceId,
+        guid: ObjectGuid,
+        entity: Entity,
+        pos: WorldPos,
+    ) {
         self.registry.inner.register(guid, entity);
-        self.grid.inner.insert(guid, pos);
+        self.grid.inner.insert(instance, guid, pos);
     }
 
     /// Удаляет сущность из индексов (например, при смерти или отключении).
-    pub fn unregister_entity(&mut self, guid: ObjectGuid, pos: WorldPos) {
+    pub fn unregister_entity(&mut self, instance: InstanceId, guid: ObjectGuid, pos: WorldPos) {
         self.registry.inner.unregister(guid);
-        self.grid.inner.remove(guid, pos);
+        self.grid.inner.remove(instance, guid, pos);
     }
 
     /// Обновляет позицию в пространственном индексе.
-    pub fn move_entity(&mut self, guid: ObjectGuid, old_pos: WorldPos, new_pos: WorldPos) {
-        self.grid.inner.move_entity(guid, old_pos, new_pos);
+    pub fn move_entity(
+        &mut self,
+        instance: InstanceId,
+        guid: ObjectGuid,
+        old_pos: WorldPos,
+        new_pos: WorldPos,
+    ) {
+        self.grid
+            .inner
+            .move_entity(instance, guid, old_pos, new_pos);
     }
 
     /// Проверяет, заблокирован ли тайл статической картой (стенами).
-    pub fn is_solid_map(&self, pos: WorldPos) -> bool {
-        self.map.inner.is_solid_fast(pos)
+    pub fn is_solid_map(&self, instance: InstanceId, pos: WorldPos) -> bool {
+        self.map
+            .get_map(instance)
+            .map(|m| m.is_solid_fast(pos))
+            .unwrap_or(false)
     }
 
     /// Возвращает список GUID всех сущностей в том же bucket'е (чанке), что и точка.
-    pub fn get_entities_in_bucket(&self, pos: WorldPos) -> &[ObjectGuid] {
-        self.grid.inner.query_bucket(pos)
+    pub fn get_entities_in_bucket(&self, instance: InstanceId, pos: WorldPos) -> &[ObjectGuid] {
+        self.grid.inner.query_bucket(instance, pos)
     }
 
     /// Ищет Bevy Entity по постоянному GUID.
@@ -210,6 +227,7 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
     pub fn initiate_combat(
         &mut self,
         initiator: Entity,
+        instance: InstanceId,
         center_pos: WorldPos,
         spatial: &SpatialSubsystem,
     ) {
@@ -221,7 +239,7 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
         tracing::info!("⚔️ Initiating COMBAT BUBBLE around {:?}", center_pos);
 
         // 1. Ищем всех в радиусе 16 тайлов (1 чанк)
-        let nearby_guids = spatial.grid.inner.query_radius(center_pos, 16);
+        let nearby_guids = spatial.grid.inner.query_radius(instance, center_pos, 16);
         let mut participants = Vec::new();
 
         for guid in nearby_guids {
@@ -261,7 +279,11 @@ impl<'w, 's> CombatSubsystem<'w, 's> {
                 movement_points: 10, // Стартовые MP
             });
 
-            let name = self.names.get(actor).cloned().unwrap_or_default();
+            let name = self
+                .names
+                .get(actor)
+                .map(|n| n.as_str().to_string())
+                .unwrap_or_default();
             tracing::info!("🛡️ {} joined the combat!", name);
         }
 

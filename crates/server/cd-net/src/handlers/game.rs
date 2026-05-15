@@ -1,6 +1,6 @@
 use crate::error::NetResult;
 use crate::session::Session;
-use cd_core::{Direction, WorldPos};
+use cd_core::Direction;
 use cd_engine::{CommandSender, InputCmd};
 
 pub async fn handle_move(session: Session, cmd_tx: CommandSender, dir: Direction) -> NetResult<()> {

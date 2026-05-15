@@ -12,7 +12,7 @@ pub struct WorldGenerator;
 
 impl WorldGenerator {
     /// Генерирует простую тестовую комнату 10x10 в чанке (0,0)
-    pub fn generate_test_room(map: &mut MapResource, defs: &DefsCache) {
+    pub fn generate_test_room(map_res: &mut MapResource, defs: &DefsCache) {
         let mut chunk = Chunk::new();
 
         // 1. Находим нужные материалы в кэше по их слагу (slug)
@@ -55,7 +55,10 @@ impl WorldGenerator {
         }
 
         // 4. Сохраняем чанк в карту
-        map.inner.put_chunk(WorldPos::new(0, 0, 0), chunk);
+        // TODO: [Instancing] Параметризовать генератор комнат для поддержки разных инстансов.
+        let instance = cd_ecs::InstanceId::OVERWORLD;
+        let map = map_res.get_mut_map(instance);
+        map.put_chunk(WorldPos::new(0, 0, 0), chunk);
         tracing::info!("Test room generated using Depot materials!");
     }
 
@@ -69,7 +72,7 @@ impl WorldGenerator {
             .spawn((
                 Guid(guid),
                 Position(pos),
-                Name::new("Test Goblin"),
+                Name::new("Test Skeleton"),
                 Render {
                     glyph: Glyph::new(0x00FF00, b'g'),
                 },
@@ -79,6 +82,7 @@ impl WorldGenerator {
                     mana: 0,
                     max_mana: 0,
                 },
+                cd_ecs::InstanceId::OVERWORLD,
             ))
             .id();
 
@@ -88,10 +92,11 @@ impl WorldGenerator {
             registry.inner.register(guid, entity);
         }
         if let Some(mut grid) = world.get_resource_mut::<crate::world::resources::GridResource>() {
-            grid.inner.insert(guid, pos);
+            grid.inner
+                .insert(cd_ecs::components::InstanceId::OVERWORLD, guid, pos);
         }
 
-        tracing::info!("Test goblin spawned at {:?}", pos);
+        tracing::info!("Test skeleton spawned at {:?}", pos);
     }
 }
 

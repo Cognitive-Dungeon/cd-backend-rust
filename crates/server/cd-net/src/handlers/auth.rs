@@ -1,7 +1,7 @@
 use crate::error::NetResult;
-use crate::protocol::{ClientPacket, ServerPacket};
+use crate::protocol::ServerPacket;
 use crate::session::Session;
-use cd_core::{ObjectGuid, WorldPos};
+use cd_core::ObjectGuid;
 use cd_engine::{CommandSender, InputCmd};
 use std::hash::{Hash, Hasher};
 

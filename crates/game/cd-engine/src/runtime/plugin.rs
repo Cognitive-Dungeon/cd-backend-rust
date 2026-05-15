@@ -19,7 +19,6 @@ use crate::{
 };
 use bevy::ecs::message::Messages;
 use cd_ecs::SpatialGrid;
-use cd_map::WorldMap;
 
 /// Главный плагин движка. Регистрирует все системы и ресурсы.
 pub struct EnginePlugin {
@@ -33,9 +32,7 @@ pub struct EnginePlugin {
 impl Plugin for EnginePlugin {
     fn build(&self, app: &mut App) {
         // 1. Вставляем ресурсы
-        app.insert_resource(MapResource {
-            inner: WorldMap::new(),
-        });
+        app.init_resource::<MapResource>();
         app.insert_resource(GridResource {
             inner: SpatialGrid::new(),
         });

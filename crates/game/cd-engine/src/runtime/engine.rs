@@ -6,7 +6,6 @@ use bevy::ecs::message::Messages;
 use bevy::ecs::prelude::*;
 use cd_data::provider::DataProvider;
 use cd_ecs::SpatialGrid;
-use cd_map::WorldMap;
 use cd_telemetry::{EngineEvent, TelemetrySink};
 use std::sync::Arc;
 
@@ -30,9 +29,7 @@ impl Engine {
         data_provider: Arc<dyn DataProvider>,
     ) -> Self {
         let mut world = World::new();
-        world.insert_resource(MapResource {
-            inner: WorldMap::new(),
-        });
+        world.init_resource::<MapResource>();
         world.insert_resource(GridResource {
             inner: SpatialGrid::new(),
         });

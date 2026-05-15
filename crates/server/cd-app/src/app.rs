@@ -2,6 +2,7 @@ use anyhow::Result;
 use bevy::app::App;
 use cd_data::json::{JsonEntityRepository, JsonWorldRepository};
 use cd_data::provider::RonDataProvider;
+use cd_ecs::InstanceId;
 use cd_engine::{BroadcastSink, CommandBus, InputCmd, runtime::plugin::EnginePlugin};
 use cd_net::protocol::{OutboundMessage, ServerPacket, TileView};
 use cd_net::snapshot::SnapshotBuilder;
@@ -82,7 +83,8 @@ pub fn run() -> Result<()> {
     // -- ПРОДАКШЕН РЕЖИМ (Без графики, 20 TPS) --
     #[cfg(not(feature = "dev_editor"))]
     {
-        app.add_plugins(bevy_app::ScheduleRunnerPlugin::run_loop(
+        use std::time::Duration;
+        app.add_plugins(bevy::app::ScheduleRunnerPlugin::run_loop(
             Duration::from_millis(50),
         ));
     }
@@ -139,7 +141,11 @@ fn publish_state_system(world: &mut bevy::ecs::world::World) {
         .id
         .0 += 1;
 
-    let snapshots = cd_net::snapshot::SnapshotBuilder::build_entities(world);
+    // TODO: [Instancing] Сейчас мы жестко отдаем клиентам только OVERWORLD.
+    // В будущем нужно собирать разные снапшоты для клиентов на разных этажах!
+    let target_instance = cd_ecs::InstanceId::OVERWORLD;
+
+    let snapshots = cd_net::snapshot::SnapshotBuilder::build_entities(world, target_instance);
     let api_state = world.non_send_resource::<SharedApiState>().clone();
     let outbound_tx = world
         .non_send_resource::<broadcast::Sender<OutboundMessage>>()
@@ -180,7 +186,7 @@ fn publish_state_system(world: &mut bevy::ecs::world::World) {
 
     if tick.is_multiple_of(20) {
         let chunk_pos = cd_core::WorldPos::new(0, 0, 0);
-        let chunk_snap = SnapshotBuilder::build_chunk(world, chunk_pos);
+        let chunk_snap = SnapshotBuilder::build_chunk(world, target_instance, chunk_pos);
         let palette_view: Vec<TileView> = chunk_snap
             .palette
             .into_iter()
@@ -217,5 +223,6 @@ fn setup_test_world(
         "Test Goblin",
         &defs,
         false,
+        InstanceId::OVERWORLD,
     );
 }

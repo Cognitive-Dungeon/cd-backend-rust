@@ -1,14 +1,28 @@
 use bevy::ecs::prelude::*;
 use cd_data::defs::{CreatureId, FurnitureId, SpellDef, SpellId};
+use cd_ecs::InstanceId;
 use cd_map::MaterialID;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::world::defs::{CreatureDef, FurnitureDef, MaterialDef};
 
 /// Обертка над картой мира для ECS
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct MapResource {
-    pub inner: cd_map::WorldMap,
+    /// Ключ - ID инстанса. У каждого подземелья - своя независимая физическая карта
+    pub instances: HashMap<InstanceId, cd_map::WorldMap>,
+}
+
+impl MapResource {
+    pub fn get_map(&self, instance: InstanceId) -> Option<&cd_map::WorldMap> {
+        self.instances.get(&instance)
+    }
+
+    pub fn get_mut_map(&mut self, instance: InstanceId) -> &mut cd_map::WorldMap {
+        self.instances
+            .entry(instance)
+            .or_insert_with(cd_map::WorldMap::new)
+    }
 }
 
 /// Обертка над пространственной сеткой для ECS
