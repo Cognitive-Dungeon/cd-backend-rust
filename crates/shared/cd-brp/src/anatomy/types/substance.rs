@@ -892,4 +892,19 @@ impl SubstancePool {
             4940.0 * (siz_f / 13.0).powf(1.15)
         }
     }
+
+    /// Применяет потерю крови с учетом реального времени (delta_secs)
+    pub fn update_blood_loss(&mut self, new_rate: f32, delta_secs: f32) {
+        self.blood_loss_rate = new_rate;
+        if self.blood_loss_rate > 0.0 {
+            // Реалистичное вычитание с защитой от ухода в минус
+            self.blood_volume = (self.blood_volume - self.blood_loss_rate * delta_secs).max(0.0);
+        }
+    }
+
+    /// Возвращает процент потерянной крови (от 0.0 до 1.0)
+    pub fn blood_loss_percent(&self) -> f32 {
+        let max_blood = self.max_blood_volume.max(1.0); // Защита от деления на 0
+        1.0 - (self.blood_volume / max_blood).clamp(0.0, 1.0)
+    }
 }

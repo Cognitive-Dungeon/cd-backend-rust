@@ -159,4 +159,42 @@ impl Anatomy {
             events,
         }
     }
+
+    /// Полный цикл пересчета физиологического состояния
+    pub fn process_vitals_tick(&mut self, delta_secs: f32) {
+        if self.vitals.state == crate::anatomy::CharacterState::Dead {
+            return;
+        }
+
+        if !self.is_alive() {
+            self.vitals.transition_to_dead();
+            return;
+        }
+
+        // 1. Сбор агрегированных данных из всех ран
+        let (total_bleeding, total_pain) = self.aggregate_wound_effects();
+
+        // 2. Обновление пула веществ (истекание кровью)
+        self.substances
+            .update_blood_loss(total_bleeding, delta_secs);
+
+        // 3. Пересчет шока, сознания и общих состояний
+        self.vitals.recalculate_state(total_pain, &self.substances);
+    }
+
+    /// Собирает суммарную кровопотерю и боль по всем частям тела
+    fn aggregate_wound_effects(&self) -> (f32, f32) {
+        let mut total_bleeding = 0.0;
+        let mut total_pain = 0.0;
+
+        for part in self.parts.values() {
+            for wound in &part.wounds {
+                if wound.is_active() {
+                    total_bleeding += wound.bleeding_rate;
+                    total_pain += wound.pain_level;
+                }
+            }
+        }
+        (total_bleeding, total_pain)
+    }
 }
