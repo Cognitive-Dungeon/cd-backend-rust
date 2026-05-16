@@ -72,6 +72,7 @@
 //! }
 //! ```
 
+use bevy::reflect::Reflect;
 use serde::{Deserialize, Serialize};
 
 use crate::anatomy::{TissueType, WoundSeverity, WoundType};
@@ -424,7 +425,7 @@ impl PenetrationProfile {
 /// - *BRP UGE*, стр. 15: "Major Wounds" и их последствия
 /// - *Dwarf Fortress*: `WOUND` с параметрами `SIZE`, `PAIN_LEVEL`, `INFECTION_CHANCE`
 /// - *CDDA*: система ран с кровотечением, болью, риском заражения
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct Wound {
     /// Тип урона, вызвавшего рану.
     ///

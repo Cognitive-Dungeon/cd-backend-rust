@@ -1,15 +1,16 @@
 use bevy::ecs::component::Component;
+use bevy::reflect::Reflect;
 use enum_map::EnumMap;
 use enum_map::enum_map;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
+use crate::anatomy::types::location::calculate_location_hp;
 use crate::{
     HitLocationType, Injury,
-    anatomy::{HitLocationRoll, Organ, OrganType, TissueLayer, TissueType, Wound},
+    anatomy::{Organ, OrganType, TissueLayer, TissueType, Wound},
 };
 
-#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Reflect)]
 pub struct BodyPart {
     // Legacy BRP поля (для совместимости с action_points.rs)
     pub location: HitLocationType,
@@ -19,16 +20,24 @@ pub struct BodyPart {
     pub injuries: Vec<Injury>,
 
     // Симулятивные поля
+    #[reflect(ignore)]
     pub tissues: EnumMap<TissueType, Option<TissueLayer>>,
+    #[reflect(ignore)]
     pub organs: EnumMap<OrganType, Option<Organ>>,
     pub wounds: Vec<Wound>,
     pub is_useless: bool,
     pub is_destroyed: bool,
 }
 
+impl Default for BodyPart {
+    fn default() -> Self {
+        Self::new(10, crate::HitLocationType::Chest, 0)
+    }
+}
+
 impl BodyPart {
     pub fn new(total_hp: i32, location: HitLocationType, armor: i32) -> Self {
-        let max_hp = (total_hp as f32 * location.hp_fraction()).ceil() as i32;
+        let max_hp = calculate_location_hp(total_hp, location);
 
         let mut tissues = enum_map! { _ => None };
 

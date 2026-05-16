@@ -1,8 +1,8 @@
 use crate::dice::{DamageModifier, DiceType, Sign};
-use bevy::ecs::component::Component;
+use bevy::{ecs::component::Component, reflect::Reflect};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Hash, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, Component, Reflect)]
 pub struct Characteristics {
     pub str: i32, // Strength
     pub con: i32, // Constitution

@@ -4,7 +4,7 @@
 
 mod components;
 mod config;
-mod systems;
+pub(crate) mod systems;
 
 // ========== Публичные типы ==========
 pub use types::events::*;
@@ -40,14 +40,14 @@ pub fn is_character_alive(anatomy: &Anatomy) -> bool {
     anatomy.is_alive()
 }
 
-/// Расчёт урона с полной симуляцией (выносится в систему, но полезно для тестов)
-#[cfg(feature = "debug_tools")]
-pub fn simulate_damage(
-    anatomy: &mut Anatomy,
-    location: HitLocationType,
-    damage: i32,
-    wound_type: WoundType,
-    penetration_mm: f32,
-) -> DamageResult {
-    anatomy.apply_damage_detailed(location, damage, wound_type, penetration_mm)
-}
+// /// Расчёт урона с полной симуляцией (выносится в систему, но полезно для тестов)
+// #[cfg(feature = "debug_tools")]
+// pub fn simulate_damage(
+//     anatomy: &mut Anatomy,
+//     location: HitLocationType,
+//     damage: i32,
+//     wound_type: WoundType,
+//     penetration_mm: f32,
+// ) -> DamageResult {
+//     anatomy.apply_damage_detailed(location, damage, wound_type, penetration_mm)
+// }

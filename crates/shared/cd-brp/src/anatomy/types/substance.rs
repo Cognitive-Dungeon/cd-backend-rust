@@ -37,6 +37,7 @@
 //! }
 //! ```
 
+use bevy::reflect::Reflect;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -69,7 +70,7 @@ use std::collections::HashMap;
 /// # Ссылки
 /// - *BRP UGE*, стр. 152: "Poisons and Drugs"
 /// - *Dwarf Fortress*: `SYNDROME` с тегами `CE_ADD_SYNDROME_DILUTE`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect)]
 pub enum ToxinType {
     /// Общие яды: растительные, минеральные, синтетические.
     ///
@@ -171,7 +172,7 @@ pub enum ToxinType {
 /// # Ссылки
 /// - *BRP UGE*, стр. 153: "Diseases and Healing"
 /// - *Dwarf Fortress*: `SYNDROME` с тегами `CE_BODY_MAT_INTERACTION`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect)]
 pub enum PathogenId {
     /// Бактериальные инфекции: стафилококк, стрептококк, клостридии.
     ///
@@ -280,7 +281,7 @@ pub enum PathogenId {
 ///
 /// # Ссылки
 /// - *Dwarf Fortress*: `SYNDROME` с тегами `CE_BODY_MAT_INTERACTION`, `CE_ADD_BODY_MAT_LAYER`
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub enum InfectionSymptom {
     /// Повышенная температура тела (лихорадка).
     ///
@@ -363,7 +364,7 @@ pub enum InfectionSymptom {
     ///
     /// # Пример из правил
     /// > "Septic shock has a mortality rate of 40-50% even with modern treatment."
-    /// — Адаптировано для фэнтези: шанс выживания = (POW + CON) / 2 + medical_bonus
+    /// > — Адаптировано для фэнтези: шанс выживания = (POW + CON) / 2 + medical_bonus
     SystemicShock(f32),
 }
 
@@ -409,7 +410,7 @@ pub enum InfectionSymptom {
 /// # Ссылки
 /// - *BRP UGE*, стр. 152: "Poison Mechanics"
 /// - Фармакокинетика: модель однокамерного распределения
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct ToxinLevel {
     /// Текущая концентрация токсина в условных единицах (0.0-100.0).
     ///
@@ -486,7 +487,7 @@ pub struct ToxinLevel {
 /// # Ссылки
 /// - *Dwarf Fortress*: механика `SYNDROME`, `CE_ADD_SYNDROME_DILUTE`, `CE_BODY_MAT_INTERACTION`
 /// - *CDDA*: система иммунного ответа и прогрессии заболеваний
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct Infection {
     /// Тип патогена, вызвавшего инфекцию.
     ///
@@ -620,7 +621,7 @@ pub struct Infection {
 /// - *BRP UGE*, стр. 14-15: "Hit Points", "Major Wounds"
 /// - *Dwarf Fortress*: механика `BODY_MATERIAL`, `SYNDROME`, `CE_BODY_MAT_INTERACTION`
 /// - *CDDA*: система кровотечения, инфекций, метаболизма
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct SubstancePool {
     /// Максимальный объём крови в миллилитрах.
     pub max_blood_volume: f32,

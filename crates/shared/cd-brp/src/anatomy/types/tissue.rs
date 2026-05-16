@@ -38,6 +38,7 @@
 //! anatomy.vitals.pain += pain;
 //! ```
 
+use bevy::reflect::Reflect;
 use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
@@ -83,7 +84,7 @@ use serde::{Deserialize, Serialize};
 /// # Ссылки
 /// - *BRP UGE*, стр. 14: распределение ХП по зонам тела
 /// - *Dwarf Fortress*: `TISSUE` с тегами `RELATIVE_THICKNESS`, `PAIN_RECEPTORS`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum, Reflect)]
 pub enum TissueType {
     /// Кожа: внешний защитный слой организма.
     ///
@@ -147,7 +148,7 @@ pub enum TissueType {
     ///
     /// # Пример из правил
     /// > "A torn muscle reduces the effectiveness of the limb by half until healed."
-    /// — Адаптировано из BRP для симулятивной модели
+    /// > — Адаптировано из BRP для симулятивной модели
     Muscle,
 
     /// Сухожилия: передача усилия от мышцы к кости.
@@ -217,7 +218,7 @@ pub enum TissueType {
     ///
     /// # Примеры из правил
     /// > "A fractured bone requires immobilization and reduces limb function to zero until healed."
-    /// — BRP UGE, адаптировано для симуляции
+    /// > — BRP UGE, адаптировано для симуляции
     ///
     /// # Особые локации
     /// | Кость | Особенность | Критичность |
@@ -399,7 +400,7 @@ pub enum TissueType {
 /// # Ссылки
 /// - *Dwarf Fortress*: `TISSUE_LAYER` с параметрами `RELATIVE_THICKNESS`, `PAIN_RECEPTORS`, `CONNECTIVE_TISSUE_ANCHOR`
 /// - *CDDA*: система `body_part_struct` с полями `hp`, `bleed`, `pain`
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct TissueLayer {
     /// Тип биологической ткани.
     ///

@@ -67,7 +67,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Архитектурное назначение
 /// `HitLocationType` служит ключом для:
-/// - Индексации частей тела в `HashMap<HitLocationType, BodyPart>`
+/// - Индексации частей тела в `EnumMap<HitLocationType, BodyPart>`
 /// - Выборки модификаторов брони по зоне
 /// - Применения специфичных эффектов (например, `Head` → игнор брони при крите)
 ///
@@ -135,7 +135,7 @@ pub enum HitLocationType {
     ///
     /// # Пример из правил
     /// > "A character with a broken leg moves at half speed and cannot run."
-    /// — BRP UGE, адаптировано для симулятивной модели
+    /// > — BRP UGE, адаптировано для симулятивной модели
     RightLeg,
 
     /// Левая нога: опорная конечность для движения и баланса.
@@ -187,7 +187,7 @@ pub enum HitLocationType {
     ///
     /// # Пример из правил
     /// > "Abdominal wounds may cause internal bleeding, requiring immediate medical attention."
-    /// — Адаптировано из расширенных правил BRP
+    /// > — Адаптировано из расширенных правил BRP
     Abdomen,
 
     /// Грудь: зона сердца, лёгких и защиты позвоночника.
@@ -218,7 +218,7 @@ pub enum HitLocationType {
     ///
     /// # Пример из правил
     /// > "A critical hit to the chest ignores armor and deals maximum damage."
-    /// — BRP UGE, стр. 149
+    /// > — BRP UGE, стр. 149
     Chest,
 
     /// Правая рука: конечность для атаки, защиты и манипуляций.
@@ -322,7 +322,7 @@ pub enum HitLocationType {
     ///
     /// # Пример из правил
     /// > "A hit to the head that reduces it to 0 HP or less causes instant death."
-    /// — BRP UGE, стр. 15
+    /// > — BRP UGE, стр. 15
     Head,
 }
 

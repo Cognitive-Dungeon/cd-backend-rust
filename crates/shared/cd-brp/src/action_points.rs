@@ -1,9 +1,10 @@
 use crate::anatomy::{Anatomy, HitLocationType, Injury};
 use crate::characteristics::Characteristics;
 use bevy::ecs::component::Component;
+use bevy::reflect::Reflect;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Reflect)]
 pub struct ActionPoints {
     pub current: i32,
 }

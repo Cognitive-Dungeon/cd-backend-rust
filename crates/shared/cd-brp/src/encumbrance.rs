@@ -2,6 +2,7 @@ use bevy::ecs::component::Component;
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::{Changed, Or};
 use bevy::ecs::system::Query;
+use bevy::reflect::Reflect;
 use serde::{Deserialize, Serialize};
 
 use crate::characteristics::Characteristics;
@@ -57,7 +58,9 @@ impl EncumbranceLevel {
 // ============================================================================
 /// Компонент текущей нагрузки. Сериализуется и реплицируется по сети.
 /// ============================================================================
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, Component)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, Component, Reflect,
+)]
 pub struct Encumbrance {
     pub current: i32,
 }

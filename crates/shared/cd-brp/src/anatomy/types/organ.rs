@@ -1,7 +1,8 @@
+use bevy::reflect::Reflect;
 use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum, Reflect)]
 pub enum OrganType {
     Brain,
     Heart,
@@ -13,7 +14,7 @@ pub enum OrganType {
     Spine,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum, Reflect)]
 pub enum OrganFunction {
     Vital,
     Locomotion,
@@ -23,7 +24,7 @@ pub enum OrganFunction {
     Detoxification,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Serialize, Deserialize, Enum, Reflect)]
 pub enum OrganCondition {
     Bruised,
     Lacerated,
@@ -32,7 +33,7 @@ pub enum OrganCondition {
     Infected,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
 pub struct Organ {
     pub organ_type: OrganType,
     pub functions: Vec<OrganFunction>,

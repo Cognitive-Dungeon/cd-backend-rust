@@ -1,3 +1,4 @@
+use bevy::reflect::Reflect;
 use serde::{Deserialize, Serialize};
 
 /// Типы травм (Injuries) по правилам BRP/DF.
@@ -22,7 +23,7 @@ use serde::{Deserialize, Serialize};
 ///     action_points /= 2; // Хромает
 /// }
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect)]
 pub enum Injury {
     /// Кровотечение: часть теряет 1 ХП в раунд до остановки.
     ///
@@ -103,7 +104,7 @@ pub enum Injury {
 /// # Ссылки
 /// - *BRP UGE*, стр. 149: "Weapon Special Effects"
 /// - *Dwarf Fortress*: механика `ATTACK_TYPE` и взаимодействие с материалами
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect)]
 pub enum WoundType {
     /// Тупой урон: дробящее воздействие без проникновения.
     ///
@@ -234,7 +235,9 @@ pub enum WoundType {
 /// # Ссылки
 /// - *Dwarf Fortress*: уровни ран `MINOR_DAMAGED` → `FUNCTION_LOSS` → `MISSING` [[8]]
 /// - *BRP UGE*: "Major Wounds" и их последствия (стр. 14-15)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Reflect,
+)]
 pub enum WoundSeverity {
     /// Отсутствие раны или поверхностное повреждение без последствий.
     ///

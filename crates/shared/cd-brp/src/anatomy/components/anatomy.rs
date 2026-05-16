@@ -1,8 +1,10 @@
 use bevy::ecs::component::Component;
+use bevy::reflect::Reflect;
 use enum_map::{EnumMap, enum_map};
 use serde::{Deserialize, Serialize};
 
-use crate::anatomy::AnatomyEvent;
+use crate::anatomy::types::location::{is_critical, iter_by_criticality};
+use crate::anatomy::{AnatomyEvent, DamageInput, SimulationOutput};
 use crate::{
     BodyPart, HitLocationType,
     anatomy::{
@@ -11,10 +13,11 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Reflect)]
 pub struct Anatomy {
     pub total_hp: i32,
     pub current_hp: i32,
+    #[reflect(ignore)]
     pub parts: EnumMap<HitLocationType, BodyPart>,
     pub substances: SubstancePool,
     pub vitals: VitalStats,
@@ -42,43 +45,43 @@ impl Anatomy {
         if self.current_hp <= 0 {
             return false;
         }
-        for critical_loc in [
-            HitLocationType::Head,
-            HitLocationType::Chest,
-            HitLocationType::Abdomen,
-        ] {
-            if self.parts[critical_loc].is_destroyed() {
+
+        for loc in iter_by_criticality() {
+            if is_critical(loc) && self.parts[loc].is_destroyed() {
                 return false;
             }
         }
+
         true
     }
 
     /// Legacy BRP-метод (возвращает i32 для совместимости)
     pub fn apply_damage(&mut self, location: HitLocationType, raw_damage: i32) -> i32 {
         let profile = PenetrationProfile::blunt();
-        self.apply_damage_detailed(location, raw_damage, profile, 0.0)
-            .0
-            .damage_dealt()
+        self.apply_damage_detailed(DamageInput {
+            location,
+            raw_damage,
+            profile,
+            timestamp_secs: (0.0),
+        })
+        .damage_result
+        .damage_dealt()
     }
 
     /// Новый симулятивный метод проникновения через ткани
-    pub fn apply_damage_detailed(
-        &mut self,
-        location: HitLocationType,
-        raw_damage: i32,
-        penetration: PenetrationProfile,
-        timestamp_secs: f64,
-    ) -> (DamageResult, Vec<AnatomyEvent>) {
-        let mut events = Vec::new();
-        let part = &mut self.parts[location];
+    pub fn apply_damage_detailed(&mut self, input: DamageInput) -> SimulationOutput {
+        let mut events = smallvec::SmallVec::new();
+        let part = &mut self.parts[input.location];
 
         // 1. Броня защищает
-        let effective_depth = penetration.effective_depth(part.armor, 1.0);
-        let actual_damage = (raw_damage - part.armor).max(0);
+        let effective_depth = input.profile.effective_depth(part.armor, 1.0);
+        let actual_damage = (input.raw_damage - part.armor).max(0);
 
         if actual_damage == 0 || effective_depth <= 0.0 {
-            return (DamageResult::Blocked, events);
+            return SimulationOutput {
+                damage_result: DamageResult::Blocked,
+                events,
+            };
         }
 
         // 2. Лимит урона по BRP (не больше 2x максимума части за удар)
@@ -110,6 +113,7 @@ impl Anatomy {
                 let tissue_damage = (final_damage as f32 * damage_ratio) / tissue.max_integrity;
                 tissue.apply_damage(tissue_damage);
 
+                let location = input.location;
                 events.push(AnatomyEvent::TissueDamaged {
                     location,
                     tissue: tissue_type,
@@ -134,7 +138,7 @@ impl Anatomy {
                 total_pain += tissue.pain_receptors * damage_ratio * 10.0; // Базовый множитель
 
                 // Специфика кровотечения по типу урона
-                let bleed_modifier = match penetration.tip_type {
+                let bleed_modifier = match input.profile.tip_type {
                     WoundType::Cutting => 2.0,
                     WoundType::Piercing => 1.5,
                     WoundType::Blunt => 0.3,
@@ -159,22 +163,23 @@ impl Anatomy {
             WoundSeverity::Minor
         };
 
+        let location = input.location;
         events.push(AnatomyEvent::WoundInflicted { location, severity });
 
         // 5. Создание физической Раны (Wound)
         let wound = Wound {
-            wound_type: penetration.tip_type,
+            wound_type: input.profile.tip_type,
             severity,
             affected_tissues,
             depth: effective_depth - remaining_penetration,
             bleeding_rate: total_bleeding_rate,
             pain_level: total_pain,
-            infection_risk: if penetration.tip_type == WoundType::Burning {
+            infection_risk: if input.profile.tip_type == WoundType::Burning {
                 0.0
             } else {
                 0.15
             },
-            created_at: timestamp_secs,
+            created_at: input.timestamp_secs,
         };
 
         part.wounds.push(wound);
@@ -204,6 +209,9 @@ impl Anatomy {
             pain_caused: total_pain,
         };
 
-        (res, events)
+        SimulationOutput {
+            damage_result: res,
+            events,
+        }
     }
 }

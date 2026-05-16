@@ -1,6 +1,7 @@
 use bevy::ecs::message::{Message, MessageReader};
 use bevy::ecs::prelude::*;
 
+use crate::anatomy::{AnatomyEvent, DamageInput};
 use crate::{HitLocationType, anatomy::PenetrationProfile};
 
 /// Компонент-маркер. Указывает, что сущность может получать урон по системе анатомии.
@@ -22,6 +23,7 @@ pub struct DamageMessage {
 pub fn apply_damage_system(
     mut damage_messages: MessageReader<DamageMessage>,
     mut anatomy_query: Query<&mut crate::anatomy::Anatomy, With<Damageable>>,
+    mut event_writer: MessageWriter<AnatomyEvent>,
 ) {
     for message in damage_messages.read() {
         // Пытаемся найти анатомию у цели. Если её нет или у неё нет Damageable — игнорируем.
@@ -34,12 +36,16 @@ pub fn apply_damage_system(
         };
 
         // Передаем весь профиль проникновения (включая тип раны и глубину)
-        let (result, _) = anatomy.apply_damage_detailed(
-            message.location,
-            message.raw_damage,
-            message.penetration.clone(),
-            message.timestamp_secs,
-        );
+        let output = anatomy.apply_damage_detailed(DamageInput {
+            location: message.location,
+            raw_damage: message.raw_damage,
+            profile: message.penetration.clone(),
+            timestamp_secs: message.timestamp_secs,
+        });
+
+        for event in output.events {
+            event_writer.write(event); // Рассылаем по шине ECS!
+        }
 
         // В будущем здесь можно генерировать исходящие события (например, BloodSplatterEvent)
         // на основе результата (result.bleeding_added, result.pain_caused).
@@ -47,7 +53,7 @@ pub fn apply_damage_system(
             "Damage applied to entity {:?} at {:?}: Result: {:?}",
             message.target,
             message.location,
-            result
+            output.damage_result
         );
     }
 }

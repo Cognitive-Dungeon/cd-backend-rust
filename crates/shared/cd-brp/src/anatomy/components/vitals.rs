@@ -1,4 +1,4 @@
-use bevy::ecs::component::Component;
+use bevy::{ecs::component::Component, reflect::Reflect};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -7,7 +7,7 @@ pub enum SpinalLevel {
     Thoracic,
     Lumbar,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Reflect)]
 pub enum CharacterState {
     Healthy,
     Wounded,
@@ -15,7 +15,7 @@ pub enum CharacterState {
     Dead,
 }
 
-#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Component, Serialize, Deserialize, Reflect)]
 pub struct VitalStats {
     pub pain: f32,
     pub shock_level: f32,
