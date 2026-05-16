@@ -13,6 +13,7 @@ rand = "0.10.1"
 thiserror = { workspace = true }
 seahash = "4.1"
 tracing = { workspace = true }
+enum-map = { version = "2.7", features = ["serde"] }
 
 [lints]
 workspace = true

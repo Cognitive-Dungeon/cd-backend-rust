@@ -60,6 +60,7 @@
 //! - *CDDA*: система зон попадания с модификаторами точности
 
 use bevy::reflect::Reflect;
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
 /// Зоны попадания по гуманоиду согласно таблице BRP UGE.
@@ -110,7 +111,7 @@ use serde::{Deserialize, Serialize};
 /// # Ссылки
 /// - *BRP UGE*, стр. 14: таблица "Humanoid Hit Locations"
 /// - *BRP UGE*, стр. 15: последствия "Major Wounds" по зонам
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Reflect, Enum)]
 #[serde(rename_all = "PascalCase")]
 pub enum HitLocationType {
     /// Правая нога: опорная конечность для движения и баланса.

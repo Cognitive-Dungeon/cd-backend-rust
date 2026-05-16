@@ -38,6 +38,7 @@
 //! anatomy.vitals.pain += pain;
 //! ```
 
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
 // ============================================================================
@@ -82,7 +83,7 @@ use serde::{Deserialize, Serialize};
 /// # Ссылки
 /// - *BRP UGE*, стр. 14: распределение ХП по зонам тела
 /// - *Dwarf Fortress*: `TISSUE` с тегами `RELATIVE_THICKNESS`, `PAIN_RECEPTORS`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
 pub enum TissueType {
     /// Кожа: внешний защитный слой организма.
     ///

@@ -7,6 +7,7 @@ mod config;
 mod systems;
 
 // ========== Публичные типы ==========
+pub use types::events::*;
 pub use types::injury::{Injury, WoundSeverity, WoundType};
 pub use types::location::{HitLocationRoll, HitLocationType};
 pub use types::organ::{Organ, OrganCondition, OrganFunction, OrganType};

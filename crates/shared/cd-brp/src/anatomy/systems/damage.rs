@@ -34,7 +34,7 @@ pub fn apply_damage_system(
         };
 
         // Передаем весь профиль проникновения (включая тип раны и глубину)
-        let result = anatomy.apply_damage_detailed(
+        let (result, _) = anatomy.apply_damage_detailed(
             message.location,
             message.raw_damage,
             message.penetration.clone(),

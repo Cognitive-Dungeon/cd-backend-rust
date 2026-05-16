@@ -1,4 +1,6 @@
 use bevy::ecs::component::Component;
+use enum_map::EnumMap;
+use enum_map::enum_map;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -17,8 +19,8 @@ pub struct BodyPart {
     pub injuries: Vec<Injury>,
 
     // Симулятивные поля
-    pub tissues: HashMap<TissueType, TissueLayer>,
-    pub organs: HashMap<OrganType, Organ>,
+    pub tissues: EnumMap<TissueType, Option<TissueLayer>>,
+    pub organs: EnumMap<OrganType, Option<Organ>>,
     pub wounds: Vec<Wound>,
     pub is_useless: bool,
     pub is_destroyed: bool,
@@ -27,23 +29,22 @@ pub struct BodyPart {
 impl BodyPart {
     pub fn new(total_hp: i32, location: HitLocationType, armor: i32) -> Self {
         let max_hp = (total_hp as f32 * location.hp_fraction()).ceil() as i32;
-        let mut tissues = HashMap::new();
-        tissues.insert(TissueType::Skin, TissueLayer::default_skin());
-        tissues.insert(TissueType::Muscle, TissueLayer::default_muscle(max_hp));
+
+        let mut tissues = enum_map! { _ => None };
+
+        tissues[TissueType::Skin] = Some(TissueLayer::default_skin());
+        tissues[TissueType::Muscle] = Some(TissueLayer::default_muscle(max_hp));
 
         // Кости для конечностей/головы
         if !matches!(location, HitLocationType::Abdomen) {
-            tissues.insert(
-                TissueType::Bone,
-                TissueLayer {
-                    tissue_type: TissueType::Bone,
-                    thickness: 8.0,
-                    integrity: 1.0,
-                    max_integrity: 1.0,
-                    pain_receptors: 5.0,
-                    bleeding_rate: 0.0,
-                },
-            );
+            tissues[TissueType::Bone] = Some(TissueLayer {
+                tissue_type: TissueType::Bone,
+                thickness: 8.0,
+                integrity: 1.0,
+                max_integrity: 1.0,
+                pain_receptors: 5.0,
+                bleeding_rate: 0.0,
+            });
         }
 
         Self {
@@ -53,7 +54,7 @@ impl BodyPart {
             armor,
             injuries: Vec::new(),
             tissues,
-            organs: HashMap::new(),
+            organs: enum_map! { _ => None },
             wounds: Vec::new(),
             is_useless: false,
             is_destroyed: false,

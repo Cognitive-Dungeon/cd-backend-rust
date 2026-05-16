@@ -1,7 +1,8 @@
 use bevy::ecs::component::Component;
+use enum_map::{EnumMap, enum_map};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
+use crate::anatomy::AnatomyEvent;
 use crate::{
     BodyPart, HitLocationType,
     anatomy::{
@@ -14,25 +15,17 @@ use crate::{
 pub struct Anatomy {
     pub total_hp: i32,
     pub current_hp: i32,
-    pub parts: HashMap<HitLocationType, BodyPart>,
+    pub parts: EnumMap<HitLocationType, BodyPart>,
     pub substances: SubstancePool,
     pub vitals: VitalStats,
 }
 
 impl Anatomy {
     pub fn new_humanoid(total_hp: i32, siz: i32) -> Self {
-        let mut parts = HashMap::new();
-        for loc in [
-            HitLocationType::RightLeg,
-            HitLocationType::LeftLeg,
-            HitLocationType::Abdomen,
-            HitLocationType::Chest,
-            HitLocationType::RightArm,
-            HitLocationType::LeftArm,
-            HitLocationType::Head,
-        ] {
-            parts.insert(loc, BodyPart::new(total_hp, loc, 0));
-        }
+        let parts = enum_map! {
+            loc => BodyPart::new(total_hp, loc, 0)
+        };
+
         let mut substance_pool = SubstancePool::default_human();
         substance_pool.max_blood_volume = SubstancePool::calculate_blood_volume_by_siz(siz);
         substance_pool.blood_volume = SubstancePool::calculate_blood_volume_by_siz(siz);
@@ -54,9 +47,7 @@ impl Anatomy {
             HitLocationType::Chest,
             HitLocationType::Abdomen,
         ] {
-            if let Some(part) = self.parts.get(&critical_loc)
-                && part.is_destroyed()
-            {
+            if self.parts[critical_loc].is_destroyed() {
                 return false;
             }
         }
@@ -67,6 +58,7 @@ impl Anatomy {
     pub fn apply_damage(&mut self, location: HitLocationType, raw_damage: i32) -> i32 {
         let profile = PenetrationProfile::blunt();
         self.apply_damage_detailed(location, raw_damage, profile, 0.0)
+            .0
             .damage_dealt()
     }
 
@@ -77,17 +69,16 @@ impl Anatomy {
         raw_damage: i32,
         penetration: PenetrationProfile,
         timestamp_secs: f64,
-    ) -> DamageResult {
-        let Some(part) = self.parts.get_mut(&location) else {
-            return DamageResult::Missed;
-        };
+    ) -> (DamageResult, Vec<AnatomyEvent>) {
+        let mut events = Vec::new();
+        let part = &mut self.parts[location];
 
         // 1. Броня защищает
         let effective_depth = penetration.effective_depth(part.armor, 1.0);
         let actual_damage = (raw_damage - part.armor).max(0);
 
         if actual_damage == 0 || effective_depth <= 0.0 {
-            return DamageResult::Blocked;
+            return (DamageResult::Blocked, events);
         }
 
         // 2. Лимит урона по BRP (не больше 2x максимума части за удар)
@@ -108,7 +99,7 @@ impl Anatomy {
                 break;
             }
 
-            if let Some(tissue) = part.tissues.get_mut(&tissue_type) {
+            if let Some(tissue) = &mut part.tissues[tissue_type] {
                 affected_tissues.push(tissue_type);
 
                 // Доля урона, приходящаяся на эту ткань
@@ -118,6 +109,26 @@ impl Anatomy {
                 // Разрушение ткани
                 let tissue_damage = (final_damage as f32 * damage_ratio) / tissue.max_integrity;
                 tissue.apply_damage(tissue_damage);
+
+                events.push(AnatomyEvent::TissueDamaged {
+                    location,
+                    tissue: tissue_type,
+                    damage_ratio,
+                });
+
+                if tissue_type == crate::anatomy::TissueType::Bone && tissue.is_destroyed() {
+                    events.push(AnatomyEvent::BoneFractured { location });
+                }
+
+                if matches!(
+                    tissue_type,
+                    crate::anatomy::TissueType::Artery | crate::anatomy::TissueType::Vein
+                ) {
+                    events.push(AnatomyEvent::VesselRuptured {
+                        location,
+                        bleed_rate: tissue.bleeding_rate,
+                    });
+                }
 
                 // Расчет боли и кровотечения от этой ткани
                 total_pain += tissue.pain_receptors * damage_ratio * 10.0; // Базовый множитель
@@ -148,6 +159,8 @@ impl Anatomy {
             WoundSeverity::Minor
         };
 
+        events.push(AnatomyEvent::WoundInflicted { location, severity });
+
         // 5. Создание физической Раны (Wound)
         let wound = Wound {
             wound_type: penetration.tip_type,
@@ -170,6 +183,7 @@ impl Anatomy {
         if severity >= WoundSeverity::Missing && !part.injuries.contains(&crate::Injury::Severed) {
             part.injuries.push(crate::Injury::Severed);
             part.is_destroyed = true;
+            events.push(AnatomyEvent::LimbSevered { location });
         } else if severity >= WoundSeverity::FunctionLoss
             && !part.injuries.contains(&crate::Injury::Fractured)
         {
@@ -177,10 +191,19 @@ impl Anatomy {
             part.is_useless = true;
         }
 
-        DamageResult::Hit {
+        if total_bleeding_rate > 0.0 {
+            events.push(AnatomyEvent::BloodSpilled {
+                location,
+                amount_ml: total_bleeding_rate * 2.0,
+            });
+        }
+
+        let res = DamageResult::Hit {
             damage_dealt: final_damage,
             bleeding_added: total_bleeding_rate,
             pain_caused: total_pain,
-        }
+        };
+
+        (res, events)
     }
 }

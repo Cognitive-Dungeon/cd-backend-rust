@@ -1,6 +1,7 @@
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
 pub enum OrganType {
     Brain,
     Heart,
@@ -12,7 +13,7 @@ pub enum OrganType {
     Spine,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
 pub enum OrganFunction {
     Vital,
     Locomotion,
@@ -22,7 +23,7 @@ pub enum OrganFunction {
     Detoxification,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Enum)]
 pub enum OrganCondition {
     Bruised,
     Lacerated,
