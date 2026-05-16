@@ -10,6 +10,7 @@ pub mod dice;
 pub mod encumbrance;
 mod error;
 pub mod rolls;
+pub mod rules;
 pub mod skills;
 
 pub use action_points::ActionPoints;

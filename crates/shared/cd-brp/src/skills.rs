@@ -16,6 +16,9 @@ use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use tracing::{debug, trace, warn};
 
+use crate::SuccessLevel;
+use crate::rules::BRP_CHARACTERISTIC_BASE;
+
 // ============================================================================
 // Типобезопасные проценты
 // ============================================================================
@@ -164,9 +167,10 @@ impl CategoryModifiers {
     /// - Negative (SIZ): -1 за каждый пункт >10, +1 за каждый <10
     #[must_use]
     pub fn calculate(chars: &crate::characteristics::Characteristics) -> Self {
-        let primary = |val: i32| val - 10;
-        let secondary = |val: i32| (val - 10) / 2; // Целочисленное деление: округление к нулю
-        let negative = |val: i32| 10 - val;
+        let base = BRP_CHARACTERISTIC_BASE;
+        let primary = |val: i32| val - base;
+        let secondary = |val: i32| (val - base) / 2; // Целочисленное деление: округление к нулю
+        let negative = |val: i32| base - val;
 
         Self {
             modifiers: [
@@ -671,26 +675,22 @@ pub fn process_skill_checks(
         let target_int = target as i16;
 
         // Крит/фамбл по правилам BRP
-        let base_chance = skill.effective_base().get();
-        let critical_threshold = (base_chance / 20).max(1); // 5% от базы, минимум 1
-        let critical = rolled as i16 <= critical_threshold || rolled == 1;
-        let success = rolled as i16 <= target_int;
-        let fumble = !success && rolled >= 96;
+        let success_level = SuccessLevel::evaluate(rolled as i32, target_int as i32);
 
         results.write(SkillCheckResult {
             entity: req.entity,
             skill_id: req.skill_id,
             rolled,
             target: SkillPercent::new(target_int),
-            success,
-            critical,
-            fumble,
+            success: success_level.is_success(),
+            critical: success_level.is_critical(),
+            fumble: success_level.is_fumble(),
             context: req.context.clone(),
         });
 
         debug!(
-            "Skill check: {:?} = {} vs {} → success={}, crit={}, fumble={}",
-            req.skill_id, rolled, target_int, success, critical, fumble
+            "Skill check: {:?} = {} vs {} → level={:?}",
+            req.skill_id, rolled, target_int, success_level
         );
     }
 }

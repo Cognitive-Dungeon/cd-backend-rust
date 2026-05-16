@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::rules::{
+    BRP_ALWAYS_CRIT_ROLL, BRP_ALWAYS_FUMBLE_ROLL, BRP_CRITICAL_DIVISOR, BRP_RESISTANCE_BASE,
+    BRP_RESISTANCE_MULTIPLIER, BRP_SPECIAL_DIVISOR,
+};
+
 /// Градации успеха в BRP
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum SuccessLevel {
@@ -14,17 +19,17 @@ impl SuccessLevel {
     /// Вычисляет градацию успеха для броска D100 (1..=100) против рейтинга навыка
     pub fn evaluate(roll: i32, skill_rating: i32) -> Self {
         // Правило BRP: 100 — это всегда Fumble (провал), 1 — всегда Critical (успех)
-        if roll == 100 {
+        if roll == BRP_ALWAYS_FUMBLE_ROLL {
             return Self::Fumble;
         }
-        if roll == 1 {
+        if roll == BRP_ALWAYS_CRIT_ROLL {
             return Self::Critical;
         }
 
         if roll > skill_rating {
             // Расчет порога Fumble (худшие 5% от шанса провала)
             let failure_chance = (100 - skill_rating).max(0);
-            let fumble_range = (failure_chance as f32 / 20.0).ceil() as i32;
+            let fumble_range = (failure_chance as f32 / BRP_CRITICAL_DIVISOR).ceil() as i32;
             let fumble_threshold = 101 - fumble_range.max(1); // минимум 100
 
             if roll >= fumble_threshold {
@@ -34,12 +39,12 @@ impl SuccessLevel {
         }
 
         // Успех (roll <= skill_rating)
-        let critical_threshold = (skill_rating as f32 / 20.0).ceil() as i32;
+        let critical_threshold = (skill_rating as f32 / BRP_CRITICAL_DIVISOR).ceil() as i32;
         if roll <= critical_threshold {
             return Self::Critical;
         }
 
-        let special_threshold = (skill_rating as f32 / 5.0).ceil() as i32;
+        let special_threshold = (skill_rating as f32 / BRP_SPECIAL_DIVISOR).ceil() as i32;
         if roll <= special_threshold {
             return Self::Special;
         }
@@ -50,12 +55,25 @@ impl SuccessLevel {
     pub fn is_success(&self) -> bool {
         matches!(self, Self::Success | Self::Special | Self::Critical)
     }
+
+    pub fn is_failure(&self) -> bool {
+        !self.is_success()
+    }
+
+    pub fn is_critical(&self) -> bool {
+        matches!(self, Self::Critical)
+    }
+
+    pub fn is_fumble(&self) -> bool {
+        matches!(self, Self::Fumble)
+    }
 }
 
 /// Вычисляет шанс успеха по Таблице Сопротивления (Resistance Table)
 /// Формула: 50% + (Active * 5) - (Passive * 5)
 pub fn resistance_chance(active: i32, passive: i32) -> i32 {
-    let chance = 50 + (active * 5) - (passive * 5);
+    let chance = BRP_RESISTANCE_BASE + (active * BRP_RESISTANCE_MULTIPLIER)
+        - (passive * BRP_RESISTANCE_MULTIPLIER);
     // Шанс всегда в пределах от 1 до 99 (01 всегда успех, 00 всегда провал)
     chance.clamp(1, 99)
 }
