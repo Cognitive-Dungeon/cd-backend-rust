@@ -959,6 +959,33 @@ impl Wound {
                 .iter()
                 .any(|t| matches!(t, TissueType::OrganTissue | TissueType::Artery))
     }
+
+    /// Создает новую рану, автоматически рассчитывая риск инфекции
+    pub fn new_simulated(
+        wound_type: WoundType,
+        severity: WoundSeverity,
+        affected_tissues: Vec<TissueType>,
+        depth: f32,
+        bleeding_rate: f32,
+        pain_level: f32,
+        timestamp_secs: f64,
+    ) -> Self {
+        let infection_risk = match wound_type {
+            WoundType::Burning => crate::anatomy::INFECTION_RISK_BURNING,
+            _ => crate::anatomy::INFECTION_RISK_DEFAULT,
+        };
+
+        Self {
+            wound_type,
+            severity,
+            affected_tissues,
+            depth,
+            bleeding_rate,
+            pain_level,
+            infection_risk,
+            created_at: timestamp_secs,
+        }
+    }
 }
 
 /// Типы медицинского вмешательства для лечения ран.

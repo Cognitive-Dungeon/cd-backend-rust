@@ -4,13 +4,13 @@ use enum_map::{EnumMap, enum_map};
 use serde::{Deserialize, Serialize};
 
 use crate::anatomy::types::location::{is_critical, iter_by_criticality};
-use crate::anatomy::{AnatomyEvent, DamageInput, SimulationOutput};
+use crate::anatomy::{
+    AnatomyEvent, BLOOD_SPILLED_VISUAL_MULTIPLIER, BRP_MAX_PART_DAMAGE_MULTIPLIER, DamageInput,
+    SimulationOutput,
+};
 use crate::{
     BodyPart, HitLocationType,
-    anatomy::{
-        DamageResult, PenetrationProfile, SubstancePool, TISSUE_PENETRATION_ORDER, VitalStats,
-        Wound, WoundSeverity, WoundType,
-    },
+    anatomy::{DamageResult, PenetrationProfile, SubstancePool, VitalStats, Wound, WoundSeverity},
 };
 
 #[derive(Debug, Clone, Component, Serialize, Deserialize, Reflect)]
@@ -55,6 +55,27 @@ impl Anatomy {
         true
     }
 
+    /// Вспомогательная функция для обновления флагов BRP (Injury)
+    fn update_brp_injuries(
+        &mut self,
+        location: HitLocationType,
+        severity: WoundSeverity,
+        events: &mut smallvec::SmallVec<[AnatomyEvent; 8]>,
+    ) {
+        let part = &mut self.parts[location];
+
+        if severity >= WoundSeverity::Missing && !part.injuries.contains(&crate::Injury::Severed) {
+            part.injuries.push(crate::Injury::Severed);
+            part.is_destroyed = true;
+            events.push(AnatomyEvent::LimbSevered { location });
+        } else if severity >= WoundSeverity::FunctionLoss
+            && !part.injuries.contains(&crate::Injury::Fractured)
+        {
+            part.injuries.push(crate::Injury::Fractured);
+            part.is_useless = true;
+        }
+    }
+
     /// Legacy BRP-метод (возвращает i32 для совместимости)
     pub fn apply_damage(&mut self, location: HitLocationType, raw_damage: i32) -> i32 {
         let profile = PenetrationProfile::blunt();
@@ -85,132 +106,56 @@ impl Anatomy {
         }
 
         // 2. Лимит урона по BRP (не больше 2x максимума части за удар)
-        let max_possible = part.max_hp * 2;
-        let final_damage = actual_damage.min(max_possible);
+        let max_possible_damage = part.max_hp * BRP_MAX_PART_DAMAGE_MULTIPLIER;
+        let final_damage = actual_damage.min(max_possible_damage);
 
         part.hp -= final_damage;
         self.current_hp -= final_damage;
 
         // 3. Пробитие тканей (Tissue Penetration)
-        let mut remaining_penetration = effective_depth;
-        let mut affected_tissues = Vec::new();
-        let mut total_bleeding_rate = 0.0;
-        let mut total_pain = 0.0;
-
-        for tissue_type in TISSUE_PENETRATION_ORDER {
-            if remaining_penetration <= 0.0 {
-                break;
-            }
-
-            if let Some(tissue) = &mut part.tissues[tissue_type] {
-                affected_tissues.push(tissue_type);
-
-                // Доля урона, приходящаяся на эту ткань
-                let depth_in_tissue = remaining_penetration.min(tissue.thickness);
-                let damage_ratio = depth_in_tissue / tissue.thickness;
-
-                // Разрушение ткани
-                let tissue_damage = (final_damage as f32 * damage_ratio) / tissue.max_integrity;
-                tissue.apply_damage(tissue_damage);
-
-                let location = input.location;
-                events.push(AnatomyEvent::TissueDamaged {
-                    location,
-                    tissue: tissue_type,
-                    damage_ratio,
-                });
-
-                if tissue_type == crate::anatomy::TissueType::Bone && tissue.is_destroyed() {
-                    events.push(AnatomyEvent::BoneFractured { location });
-                }
-
-                if matches!(
-                    tissue_type,
-                    crate::anatomy::TissueType::Artery | crate::anatomy::TissueType::Vein
-                ) {
-                    events.push(AnatomyEvent::VesselRuptured {
-                        location,
-                        bleed_rate: tissue.bleeding_rate,
-                    });
-                }
-
-                // Расчет боли и кровотечения от этой ткани
-                total_pain += tissue.pain_receptors * damage_ratio * 10.0; // Базовый множитель
-
-                // Специфика кровотечения по типу урона
-                let bleed_modifier = match input.profile.tip_type {
-                    WoundType::Cutting => 2.0,
-                    WoundType::Piercing => 1.5,
-                    WoundType::Blunt => 0.3,
-                    _ => 1.0,
-                };
-                total_bleeding_rate += tissue.bleeding_rate * damage_ratio * bleed_modifier;
-
-                remaining_penetration -= depth_in_tissue;
-            }
-        }
+        let tissue_sim = part.process_tissue_penetration(
+            final_damage as f32,
+            effective_depth,
+            input.profile.tip_type,
+        );
+        events.extend(tissue_sim.events);
 
         // 4. Определение тяжести раны (Severity)
-        let severity = if part.hp <= -part.max_hp {
-            WoundSeverity::Missing
-        } else if part.hp <= 0 {
-            WoundSeverity::FunctionLoss
-        } else if affected_tissues.contains(&crate::anatomy::TissueType::Bone) {
-            WoundSeverity::Broken
-        } else if final_damage > part.max_hp / 2 {
-            WoundSeverity::Inhibited
-        } else {
-            WoundSeverity::Minor
-        };
-
-        let location = input.location;
-        events.push(AnatomyEvent::WoundInflicted { location, severity });
+        let severity = part.evaluate_wound_severity(final_damage, &tissue_sim.affected_tissues);
+        events.push(AnatomyEvent::WoundInflicted {
+            location: input.location,
+            severity,
+        });
 
         // 5. Создание физической Раны (Wound)
-        let wound = Wound {
-            wound_type: input.profile.tip_type,
+        let wound = Wound::new_simulated(
+            input.profile.tip_type,
             severity,
-            affected_tissues,
-            depth: effective_depth - remaining_penetration,
-            bleeding_rate: total_bleeding_rate,
-            pain_level: total_pain,
-            infection_risk: if input.profile.tip_type == WoundType::Burning {
-                0.0
-            } else {
-                0.15
-            },
-            created_at: input.timestamp_secs,
-        };
-
+            tissue_sim.affected_tissues,
+            effective_depth - tissue_sim.remaining_penetration,
+            tissue_sim.total_bleeding_rate,
+            tissue_sim.total_pain,
+            input.timestamp_secs,
+        );
         part.wounds.push(wound);
 
-        // Обновление флагов BRP
-        if severity >= WoundSeverity::Missing && !part.injuries.contains(&crate::Injury::Severed) {
-            part.injuries.push(crate::Injury::Severed);
-            part.is_destroyed = true;
-            events.push(AnatomyEvent::LimbSevered { location });
-        } else if severity >= WoundSeverity::FunctionLoss
-            && !part.injuries.contains(&crate::Injury::Fractured)
-        {
-            part.injuries.push(crate::Injury::Fractured);
-            part.is_useless = true;
-        }
+        // 6. Обновление BRP-статусов (ампутации и переломы)
+        self.update_brp_injuries(input.location, severity, &mut events);
 
-        if total_bleeding_rate > 0.0 {
+        // 7. Визуальные события (кровь)
+        if tissue_sim.total_bleeding_rate > 0.0 {
             events.push(AnatomyEvent::BloodSpilled {
-                location,
-                amount_ml: total_bleeding_rate * 2.0,
+                location: input.location,
+                amount_ml: tissue_sim.total_bleeding_rate * BLOOD_SPILLED_VISUAL_MULTIPLIER,
             });
         }
 
-        let res = DamageResult::Hit {
-            damage_dealt: final_damage,
-            bleeding_added: total_bleeding_rate,
-            pain_caused: total_pain,
-        };
-
         SimulationOutput {
-            damage_result: res,
+            damage_result: DamageResult::Hit {
+                damage_dealt: final_damage,
+                bleeding_added: tissue_sim.total_bleeding_rate,
+                pain_caused: tissue_sim.total_pain,
+            },
             events,
         }
     }
