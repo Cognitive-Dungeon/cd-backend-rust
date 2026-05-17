@@ -1,0 +1,210 @@
+{
+  "main": {
+    "id": "d61fb9c91ec63349",
+    "type": "split",
+    "children": [
+      {
+        "id": "044aa48db3402b1f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bc5afd551cd2b235",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "01 Terms Used in Basic Roleplaying"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "05f52600338f529d",
+    "type": "split",
+    "children": [
+      {
+        "id": "a75c2826cd95b5ed",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f4557ef7d2bdd616",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "fcfff30442752f2c",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "aa0fd79da7959e58",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "f3df55f02986860f",
+    "type": "split",
+    "children": [
+      {
+        "id": "c48de8cedcc029e6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e9b880b91f63a973",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки для 01 Terms Used in Basic Roleplaying"
+            }
+          },
+          {
+            "id": "1c8382e23faad575",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки из 01 Terms Used in Basic Roleplaying"
+            }
+          },
+          {
+            "id": "02cb55ee6e6dba19",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "0520f7e425d4cd9d",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "43c43d7062e33e2a",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура 01 Terms Used in Basic Roleplaying"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "bc5afd551cd2b235",
+  "lastOpenFiles": [
+    "1 Characters Skills Powers/Chapter 2 Characters/05 Derived Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/04 Characteristic Rolls.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/03 Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/05 Step Five - Derived Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/04 Step Four - Characteristic Rolls.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/03 Step Three - Age.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/02 Step Two - Powers.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/01 Step One - Name and Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/01 Power Level.md",
+    "Introduction and Power Level.md",
+    "1 Characters Skills Powers/Chapter 1 Introduction/02 Optional Rules.md",
+    "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/10 Step Ten - Finishing Touches.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/09 Step Nine - Size and Distinctive Features.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/08 Step Eight - Possessions.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/07 Step Seven - Profession and Skills.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/06 Step Six - Personality (Optional).md",
+    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character",
+    "1 Characters Skills Powers/Chapter 2 Characters",
+    "1 Characters Skills Powers/Chapter 1 Introduction",
+    "1 Characters Skills Powers"
+  ]
+}
