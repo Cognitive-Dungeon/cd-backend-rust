@@ -13,15 +13,44 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/05 Derived Characteristics.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "01 Terms Used in Basic Roleplaying"
+              "title": "05 Derived Characteristics"
+            }
+          },
+          {
+            "id": "3299b72c753c3b60",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/06 Professions.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "06 Professions"
+            }
+          },
+          {
+            "id": "1d6f78a7a77a3e87",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "08 Finishing Touches & Cultures"
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -94,7 +123,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +133,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Обратные ссылки для 01 Terms Used in Basic Roleplaying"
+              "title": "Обратные ссылки для 08 Finishing Touches & Cultures"
             }
           },
           {
@@ -113,12 +142,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Исходящие ссылки из 01 Terms Used in Basic Roleplaying"
+              "title": "Исходящие ссылки из 08 Finishing Touches & Cultures"
             }
           },
           {
@@ -156,13 +185,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
+                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Структура 01 Terms Used in Basic Roleplaying"
+              "title": "Структура 08 Finishing Touches & Cultures"
             }
           }
         ]
@@ -183,20 +212,24 @@
       "bases:Создать новую базу": false
     }
   },
-  "active": "bc5afd551cd2b235",
+  "active": "1d6f78a7a77a3e87",
   "lastOpenFiles": [
+    "1 Characters Skills Powers/Chapter 2 Characters/07 Professions A Through Z.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/06 Professions.md",
     "1 Characters Skills Powers/Chapter 2 Characters/05 Derived Characteristics.md",
+    "prompt_20260517_031952.md",
     "1 Characters Skills Powers/Chapter 2 Characters/04 Characteristic Rolls.md",
     "1 Characters Skills Powers/Chapter 2 Characters/03 Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/01 Power Level.md",
+    "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/05 Step Five - Derived Characteristics.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/04 Step Four - Characteristic Rolls.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/03 Step Three - Age.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/02 Step Two - Powers.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/01 Step One - Name and Characteristics.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/01 Power Level.md",
     "Introduction and Power Level.md",
     "1 Characters Skills Powers/Chapter 1 Introduction/02 Optional Rules.md",
-    "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/10 Step Ten - Finishing Touches.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/09 Step Nine - Size and Distinctive Features.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/08 Step Eight - Possessions.md",
