@@ -9,6 +9,7 @@ pub mod combat;
 pub mod dice;
 pub mod encumbrance;
 mod error;
+pub mod fatigue;
 pub mod rolls;
 pub mod rules;
 pub mod skills;
@@ -20,10 +21,39 @@ pub use characteristics::Characteristics;
 pub use combat::{AttackResolution, CombatHitResult, EffectiveHit, WeaponDamage, WeaponSpecial};
 pub use encumbrance::{Encumbrance, EncumbrancePenalties};
 pub use error::{BrpError, BrpResult};
+pub use fatigue::Fatigue;
 pub use rolls::{SuccessLevel, resistance_chance};
 
 /// Версия крейта для проверки совместимости
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub struct BrpCorePlugin;
+
+impl Plugin for BrpCorePlugin {
+    fn build(&self, app: &mut App) {
+        // Регистрируем компоненты BRP для инспектора
+        app.register_type::<ActionPoints>()
+            .register_type::<Encumbrance>()
+            .register_type::<Anatomy>()
+            .register_type::<Fatigue>()
+            .register_type::<Characteristics>();
+
+        // ИНИЦИАЛИЗИРУЕМ ШИНЫ СООБЩЕНИЙ:
+        app.init_resource::<bevy::ecs::message::Messages<anatomy::systems::damage::DamageMessage>>(
+        );
+        app.init_resource::<bevy::ecs::message::Messages<anatomy::AnatomyEvent>>();
+
+        // Регистрируем саму систему урона (чтобы она начала работать в игровом цикле)
+        app.add_systems(
+            bevy::app::Update,
+            (
+                anatomy::systems::damage::apply_damage_system,
+                fatigue::fatigue_tick_system,
+                // Тут же можно будет добавить apply_fatigue_to_cached_skills после расчета навыков
+            ),
+        );
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -37,28 +67,5 @@ mod tests {
         let _xp = chars.experience_bonus();
 
         let _roll = dice::roll_modifier(_mod, &mut rand::rng());
-    }
-}
-
-pub struct BrpCorePlugin;
-
-impl Plugin for BrpCorePlugin {
-    fn build(&self, app: &mut App) {
-        // Регистрируем компоненты BRP для инспектора
-        app.register_type::<ActionPoints>()
-            .register_type::<Encumbrance>()
-            .register_type::<Anatomy>()
-            .register_type::<Characteristics>();
-
-        // ИНИЦИАЛИЗИРУЕМ ШИНЫ СООБЩЕНИЙ:
-        app.init_resource::<bevy::ecs::message::Messages<anatomy::systems::damage::DamageMessage>>(
-        );
-        app.init_resource::<bevy::ecs::message::Messages<anatomy::AnatomyEvent>>();
-
-        // Регистрируем саму систему урона (чтобы она начала работать в игровом цикле)
-        app.add_systems(
-            bevy::app::Update,
-            anatomy::systems::damage::apply_damage_system,
-        );
     }
 }

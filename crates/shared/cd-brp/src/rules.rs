@@ -30,3 +30,21 @@ pub const BRP_RESISTANCE_MULTIPLIER: i32 = 5;
 /// Базовое ("среднее человеческое") значение характеристики.
 /// Используется для расчёта модификаторов навыков.
 pub const BRP_CHARACTERISTIC_BASE: i32 = 10;
+
+// ============================================================================
+// Fatigue & Exhaustion (BRP UGE & Simulation)
+// ============================================================================
+/// Базовое восстановление усталости в секунду (до умножения на CON)
+pub const FATIGUE_BASE_REGEN_RATE: f32 = 0.5;
+
+/// Штраф (вычитание) к физическим и боевым навыкам при истощении (Exhausted)
+pub const FATIGUE_EXHAUSTION_SKILL_PENALTY: i16 = -50;
+
+/// Расход усталости в секунду при экстремальном перегрузе (Overburdened)
+pub const FATIGUE_ENCUMBRANCE_DRAIN_RATE: f32 = 2.0;
+
+/// Порог кислородного голодания, ниже которого регенерация стамины падает вдвое
+pub const FATIGUE_HYPOXIA_THRESHOLD: f32 = 0.8;
+
+/// Порог обезвоживания, ниже которого регенерация стамины падает вдвое
+pub const FATIGUE_DEHYDRATION_THRESHOLD: f32 = 0.5;
