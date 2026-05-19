@@ -48,9 +48,51 @@
               "icon": "lucide-file",
               "title": "08 Finishing Touches & Cultures"
             }
+          },
+          {
+            "id": "11a38150fd5496d0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/06 New Skills & Changing the Skill List.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "06 New Skills & Changing the Skill List"
+            }
+          },
+          {
+            "id": "9e085d61cca568eb",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/06 New Skills & Changing the Skill List.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "06 New Skills & Changing the Skill List"
+            }
+          },
+          {
+            "id": "7497548e32f4b39c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/08 Acting without Skill.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "08 Acting without Skill"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 5
       }
     ],
     "direction": "vertical"
@@ -107,7 +149,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "f3df55f02986860f",
@@ -123,7 +165,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/08 Acting without Skill.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -133,7 +175,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Обратные ссылки для 08 Finishing Touches & Cultures"
+              "title": "Обратные ссылки для 08 Acting without Skill"
             }
           },
           {
@@ -142,12 +184,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/08 Acting without Skill.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Исходящие ссылки из 08 Finishing Touches & Cultures"
+              "title": "Исходящие ссылки из 08 Acting without Skill"
             }
           },
           {
@@ -185,13 +227,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
+                "file": "1 Characters Skills Powers/Chapter 3 Skills/08 Acting without Skill.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Структура 08 Finishing Touches & Cultures"
+              "title": "Структура 08 Acting without Skill"
             }
           }
         ]
@@ -212,16 +254,25 @@
       "bases:Создать новую базу": false
     }
   },
-  "active": "1d6f78a7a77a3e87",
+  "active": "7497548e32f4b39c",
   "lastOpenFiles": [
+    "1 Characters Skills Powers/Chapter 3 Skills/07 Skill Category Bonuses.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/08 Acting without Skill.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/06 New Skills & Changing the Skill List.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/05 Derived Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/06 Professions.md",
     "1 Characters Skills Powers/Chapter 2 Characters/07 Professions A Through Z.md",
     "1 Characters Skills Powers/Chapter 2 Characters/08 Finishing Touches & Cultures.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/06 Professions.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/05 Derived Characteristics.md",
+    "1 Characters Skills Powers/Chapter 2 Characters/01 Power Level.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/04 Secret or Concealed Skill Rolls.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/05 Skill Categories.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/02 Skill Specialities.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/01 Introduction and Defining Skills.md",
+    "1 Characters Skills Powers/Chapter 3 Skills/03 Using Skills.md",
+    "1 Characters Skills Powers/Chapter 3 Skills",
     "prompt_20260517_031952.md",
     "1 Characters Skills Powers/Chapter 2 Characters/04 Characteristic Rolls.md",
     "1 Characters Skills Powers/Chapter 2 Characters/03 Characteristics.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/01 Power Level.md",
     "1 Characters Skills Powers/Chapter 1 Introduction/01 Terms Used in Basic Roleplaying.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/05 Step Five - Derived Characteristics.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/04 Step Four - Characteristic Rolls.md",
@@ -232,9 +283,6 @@
     "1 Characters Skills Powers/Chapter 1 Introduction/02 Optional Rules.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/10 Step Ten - Finishing Touches.md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/09 Step Nine - Size and Distinctive Features.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/08 Step Eight - Possessions.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/07 Step Seven - Profession and Skills.md",
-    "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character/06 Step Six - Personality (Optional).md",
     "1 Characters Skills Powers/Chapter 2 Characters/02 Creating a Character",
     "1 Characters Skills Powers/Chapter 2 Characters",
     "1 Characters Skills Powers/Chapter 1 Introduction",
