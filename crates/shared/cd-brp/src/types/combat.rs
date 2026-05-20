@@ -1,5 +1,44 @@
 use serde::{Deserialize, Serialize};
 
+/// Строгий тип для очков урона (до применения брони)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct DamagePoints(pub u16);
+
+impl DamagePoints {
+    pub const ZERO: Self = Self(0);
+
+    #[inline]
+    pub const fn new(val: u16) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u16 {
+        self.0
+    }
+}
+
+/// Строгий тип для ФАКТИЧЕСКИХ очков брони в момент удара
+/// (уже после того, как кубики для Random Armor были брошены).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct ArmorPoints(pub u16);
+
+impl ArmorPoints {
+    pub const ZERO: Self = Self(0);
+
+    #[inline]
+    pub const fn new(val: u16) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u16 {
+        self.0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatPhase {
