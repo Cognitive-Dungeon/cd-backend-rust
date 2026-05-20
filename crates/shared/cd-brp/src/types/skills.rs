@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 /// Полный, строгий список навыков из рулбука (стр. 69-70).
 /// Занимает минимум памяти, сравнивается за такт процессора.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SkillType {
     // === Фиксированные базовые навыки ===

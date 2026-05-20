@@ -55,7 +55,7 @@ pub enum ItemValue {
 }
 
 /// Классы оружия (стр. 147-148). Критически важно для навыков (Skill Specialties).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum WeaponClass {
     Axe,

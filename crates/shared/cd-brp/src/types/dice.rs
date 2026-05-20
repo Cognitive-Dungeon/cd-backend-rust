@@ -53,20 +53,73 @@ pub enum DieType {
     D100,
 }
 
+impl DieType {
+    pub const fn faces(self) -> u16 {
+        match self {
+            Self::D2 => 2,
+            Self::D3 => 3,
+            Self::D4 => 4,
+            Self::D6 => 6,
+            Self::D8 => 8,
+            Self::D10 => 10,
+            Self::D12 => 12,
+            Self::D20 => 20,
+            Self::D100 => 100,
+        }
+    }
+}
+
+/// Знак модификатора (положительный или отрицательный)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ModifierSign {
+    Negative,
+    Positive,
+}
+
+/// Модификатор урона персонажа (Damage Modifier, стр. 34-35 рулбука).
+/// Пример: None, Modifier { sign: Negative, count: 1, dice: D4 } -> "-1D4"
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(tag = "type")]
+pub enum DamageModifier {
+    #[default]
+    None,
+    Modifier {
+        sign: ModifierSign,
+        count: u8,
+        dice: DieType,
+    },
+}
+
+impl fmt::Display for DamageModifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::None => write!(f, "0"),
+            Self::Modifier { sign, count, dice } => {
+                let s = match sign {
+                    ModifierSign::Negative => "-",
+                    ModifierSign::Positive => "+",
+                };
+                write!(f, "{}{}{:?}", s, count, dice)
+            }
+        }
+    }
+}
+
 /// Строгая структура для вычисления выражений вида "XDY + Z" (напр. 2D6 + 1)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiceExpression {
     pub count: u8,
     pub die: DieType,
-    pub modifier: i16,
+    pub flat_modifier: i16,
 }
 
 impl DiceExpression {
-    pub const fn new(count: u8, die: DieType, modifier: i16) -> Self {
+    pub const fn new(count: u8, die: DieType, flat_modifier: i16) -> Self {
         Self {
             count,
             die,
-            modifier,
+            flat_modifier,
         }
     }
 }

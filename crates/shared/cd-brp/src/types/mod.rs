@@ -23,7 +23,7 @@ pub use character::*;
 pub use combat::*;
 pub use config::*;
 pub use core::*;
-pub use dice::{D100Roll, DiceExpression, DieType};
+pub use dice::{D100Roll, DamageModifier, DiceExpression, DieType, ModifierSign};
 pub use environment::*;
 pub use equipment::*;
 pub use error::TypeError;
