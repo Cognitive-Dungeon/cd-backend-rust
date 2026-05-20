@@ -1,10 +1,15 @@
 //! Ядро разрешения действий: матрицы боя, модификаторы, проверка бросков.
 
+pub mod character;
 pub mod combat_matrix;
 pub mod damage;
 pub mod modifiers;
 pub mod resolution;
+pub mod skills;
 
+pub use character::{
+    calculate_derived_stats, calculate_personal_budget, calculate_professional_budget,
+};
 pub use combat_matrix::{ExchangeOutcome, TargetHitType};
 pub use damage::{DamageApplication, calculate_actual_damage};
 pub use modifiers::{
