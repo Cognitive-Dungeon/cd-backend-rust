@@ -1,4 +1,4 @@
-use crate::types::HitPoints;
+use crate::{SuccessLevel, types::HitPoints};
 
 /// Тип попадания по самому защитнику (его телу).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,4 +39,13 @@ impl ExchangeOutcome {
             parry_item_damage: HitPoints::new(damage),
         }
     }
+}
+
+pub trait MatrixResolver {
+    /// Разрешает столкновение в ближнем бою по таблице Attack and Defence Matrix (стр. 51).
+    fn resolve_melee(
+        attacker: SuccessLevel,
+        defender: Option<SuccessLevel>,
+        is_dodge: bool,
+    ) -> ExchangeOutcome;
 }

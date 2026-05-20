@@ -6,4 +6,3 @@ pub mod resolution;
 
 pub use combat_matrix::{ExchangeOutcome, TargetHitType};
 //pub use modifiers::calculate_skill_category_bonus;
-pub use resolution::{CheckResolver, ResistanceResolver};
