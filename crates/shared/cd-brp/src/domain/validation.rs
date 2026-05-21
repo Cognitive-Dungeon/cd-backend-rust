@@ -7,8 +7,13 @@ use crate::domain::chars::CharacteristicBlock;
 use crate::rules::character::{
     calculate_derived_stats, calculate_personal_budget, calculate_professional_budget,
 };
+
 use crate::types::{
     GameSessionConfig, PowerLevel, ProfessionId, SkillRating, SkillType, WealthLevel,
+};
+use crate::{
+    BodyPlan, DefId, calc_dodge_base, calc_fly_base, calc_gaming_base, calc_language_own_base,
+    calc_projection_base, calculate_category_bonus,
 };
 
 #[derive(Error, Debug)]
@@ -33,8 +38,87 @@ pub struct CharacterDraft {
     pub profession: ProfessionId,
     pub wealth: WealthLevel,
     pub stats: CharacteristicBlock,
+    pub body_plan: BodyPlan,
+    pub native_language: DefId, // ID родного языка/диалекта расы
     pub invested_prof_points: BTreeMap<SkillType, u16>,
     pub invested_personal_points: BTreeMap<SkillType, u16>,
+}
+
+/// Список навыков, которые гарантированно есть у КАЖДОГО персонажа.
+/// Сюда не входят навыки со специализациями (Art, Craft),
+/// так как они добавляются только если игрок вложил в них очки.
+const UNIVERSAL_BASE_SKILLS: &[SkillType] = &[
+    SkillType::Appraise,
+    SkillType::Bargain,
+    SkillType::Brawl,
+    SkillType::Climb,
+    SkillType::Command,
+    SkillType::Demolition,
+    SkillType::Disguise,
+    SkillType::Dodge,
+    SkillType::FastTalk,
+    SkillType::FineManipulation,
+    SkillType::FirstAid,
+    SkillType::Fly, // Имеет смысл для всех, даже если нет крыльев (база 1/2 DEX)
+    SkillType::Gaming,
+    SkillType::Grapple,
+    SkillType::Hide,
+    SkillType::Insight,
+    SkillType::Jump,
+    SkillType::Listen,
+    SkillType::Medicine,
+    SkillType::Navigate,
+    SkillType::Persuade,
+    SkillType::Projection,
+    SkillType::Psychotherapy,
+    SkillType::Research,
+    SkillType::Sense,
+    SkillType::SleightOfHand,
+    SkillType::Spot,
+    SkillType::Stealth,
+    SkillType::Strategy,
+    SkillType::Swim,
+    SkillType::Teach,
+    SkillType::Throw,
+    SkillType::Track,
+];
+
+/// Вспомогательная функция-фасад для вычисления базового шанса (Base Chance).
+/// Она объединяет статичные правила BRP и динамические характеристики конкретного персонажа.
+fn resolve_initial_skill_base(
+    skill: &SkillType,
+    stats: &CharacteristicBlock,
+    body_plan: BodyPlan,
+    config: &GameSessionConfig,
+) -> u16 {
+    // 1. Если навык имеет жестко заданную базу (например, Climb 40%), возвращаем её.
+    if let Some(base) = skill.static_base_chance() {
+        return base;
+    }
+
+    // 2. Иначе вычисляем динамическую базу на основе статов
+    match skill {
+        SkillType::Dodge => calc_dodge_base(stats.dex),
+        SkillType::Projection => calc_projection_base(stats.dex),
+        SkillType::Fly => {
+            let has_wings = matches!(
+                body_plan,
+                BodyPlan::Winged | BodyPlan::WingedFourLegged | BodyPlan::WingedHumanoid
+            );
+            calc_fly_base(stats.dex, has_wings)
+        }
+        SkillType::Gaming => calc_gaming_base(stats.int, stats.pow),
+        SkillType::LanguageOwn(_) => {
+            calc_language_own_base(stats.int, stats.edu, config.use_education_stat)
+        }
+        SkillType::Literacy(_) => {
+            // По правилам, грамотность в родном языке обычно равна (INTx5/EDUx5).
+            // Мы можем условно считать любую Literacy на старте равной этой базе,
+            // либо требовать явной настройки. Используем стандартную базу языка.
+            calc_language_own_base(stats.int, stats.edu, config.use_education_stat)
+        }
+        _ => 0, // Fallback (не должен срабатывать при полном покрытии)
+    }
 }
 
 /// Чистая функция-компилятор.
@@ -74,7 +158,25 @@ pub fn validate_and_build(
         }
     }
 
-    // 3. Вычисление итоговых шансов и проверка капов (Стр. 25)
+    // 3. СБОРКА ВСЕХ НАВЫКОВ
+    // Нам нужно объединить:
+    // 1. Универсальные навыки
+    // 2. Инвестированные навыки (включая специализации вроде Craft(Blacksmithing))
+    // 3. Родной язык и грамотность (они зависят от draft.native_language)
+    let mut all_skills_to_process: Vec<SkillType> = UNIVERSAL_BASE_SKILLS.to_vec();
+
+    all_skills_to_process.push(SkillType::LanguageOwn(draft.native_language));
+    all_skills_to_process.push(SkillType::Literacy(draft.native_language));
+
+    // Собираем все уникальные навыки, в которые игрок вложил хотя бы 1 очко
+    all_skills_to_process.extend(draft.invested_prof_points.keys().copied());
+    all_skills_to_process.extend(draft.invested_personal_points.keys().copied());
+
+    // Убираем дубликаты (чтобы не считать один и тот же скилл дважды, если в него вложили очки)
+    all_skills_to_process.sort();
+    all_skills_to_process.dedup();
+
+    // 4. Вычисление итоговых шансов и проверка капов (Стр. 25)
     let max_skill_cap = match config.power_level {
         PowerLevel::Normal => 75,
         PowerLevel::Heroic => 90,
@@ -83,16 +185,9 @@ pub fn validate_and_build(
     };
 
     let mut final_skills = BTreeMap::new();
-    let mut all_skills: Vec<SkillType> = draft
-        .invested_prof_points
-        .keys()
-        .chain(draft.invested_personal_points.keys())
-        .copied()
-        .collect();
-    all_skills.sort();
-    all_skills.dedup();
 
-    for skill in all_skills {
+    // 4. ВЫЧИСЛЕНИЕ ФИНАЛЬНЫХ ЗНАЧЕНИЙ
+    for skill in all_skills_to_process {
         let prof_pts = draft.invested_prof_points.get(&skill).copied().unwrap_or(0);
         let pers_pts = draft
             .invested_personal_points
@@ -100,19 +195,34 @@ pub fn validate_and_build(
             .copied()
             .unwrap_or(0);
 
-        // TODO: Добавить Base Chance и Category Bonus здесь, используя вынесенные в `rules` функции.
-        let base_chance = 0;
+        // 3.1. Получаем базу (например, 40% для Climb или DEXx2 для Dodge)
+        let base_chance = resolve_initial_skill_base(&skill, &draft.stats, draft.body_plan, config);
 
-        let total = base_chance + prof_pts + pers_pts;
+        // 3.2. Вычисляем бонус категории (может быть отрицательным!)
+        let category_bonus = if config.use_skill_category_bonuses {
+            calculate_category_bonus(skill.category(), &draft.stats, config)
+        } else {
+            0
+        };
 
-        if total > max_skill_cap {
+        // 3.3. Суммируем всё в i32, чтобы безопасно отработать отрицательные бонусы
+        let total =
+            (base_chance as i32) + (prof_pts as i32) + (pers_pts as i32) + (category_bonus as i32);
+
+        // Защита от ухода в минус (например, огромный штраф категории при нулевой прокачке)
+        let total_clamped = total.clamp(0, u16::MAX as i32) as u16;
+
+        // 3.4. Проверка на кап (Ограничение уровня силы кампании)
+        if total_clamped > max_skill_cap {
             return Err(ValidationError::SkillCapExceeded(skill, max_skill_cap));
         }
 
-        final_skills.insert(skill, SkillRating::new(total));
+        // Если итоговый шанс больше 0 (или если это базовый навык), сохраняем в профиль
+        // (Опциональная проверка: `if total_clamped > 0` - но для базовых лучше сохранить и 0, чтобы было явно)
+        final_skills.insert(skill, SkillRating::new(total_clamped));
     }
 
-    // 4. Формирование финального агрегата (Успех!)
+    // 6. Формирование финального агрегата
     let derived = calculate_derived_stats(&draft.stats, config);
 
     Ok(CharacterProfile {
@@ -123,5 +233,6 @@ pub fn validate_and_build(
         base_stats: draft.stats,
         derived_stats: derived,
         skills: final_skills,
+        body_plan: draft.body_plan,
     })
 }

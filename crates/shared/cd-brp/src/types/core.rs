@@ -33,6 +33,7 @@ pub enum DifficultyModifier {
     Easy,
     Average,
     Difficult,
+    Extreme,
     Impossible,
 }
 

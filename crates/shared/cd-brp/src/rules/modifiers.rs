@@ -1,9 +1,19 @@
 //! Модуль вычисления модификаторов и финальных шансов навыков.
 
-use crate::HUMAN_AVERAGE_STAT;
 use crate::domain::chars::CharacteristicBlock;
 use crate::math::BrpFractions;
 use crate::types::{DifficultyModifier, GameSessionConfig, SkillCategory, SkillRating};
+use crate::{D100_MAX, HUMAN_AVERAGE_STAT};
+
+/// Пороговые значения рейтингов навыков (стр. 67)
+pub mod skill_rating {
+    pub const NOVICE_MAX: u16 = 5; // 00-05%
+    pub const NEOPHYTE_MAX: u16 = 25; // 06-25%
+    pub const AMATEUR_MAX: u16 = 50; // 26-50%
+    pub const PROFESSIONAL_MAX: u16 = 75; // 51-75%
+    pub const EXPERT_MAX: u16 = 90; // 76-90%
+    pub const MASTER_MIN: u16 = 91; // 91%+
+}
 
 /// Применяет множитель сложности к рейтингу навыка (стр. 23-24).
 #[must_use = "результат должен быть применён к навыку"]
@@ -11,11 +21,24 @@ pub fn apply_difficulty(rating: SkillRating, difficulty: DifficultyModifier) -> 
     let val = rating.get();
 
     match difficulty {
-        DifficultyModifier::Automatic => SkillRating::new(u16::MAX), // Никогда не проваливается
-        DifficultyModifier::Easy => SkillRating::new(val.saturating_mul(2)),
+        // Специальные значения — не участвуют в обычных расчётах
+        DifficultyModifier::Automatic => SkillRating::new(u16::MAX),
+        DifficultyModifier::Impossible => SkillRating::ZERO,
+
+        // Мультипликативные модификаторы (стр. 23-24)
+        DifficultyModifier::Easy => {
+            // ×2, но не больше 100%
+            SkillRating::new((val.saturating_mul(2)).min(D100_MAX))
+        }
         DifficultyModifier::Average => rating,
-        DifficultyModifier::Difficult => SkillRating::new(val.half_ceil()),
-        DifficultyModifier::Impossible => SkillRating::ZERO, // 0% шанс
+        DifficultyModifier::Difficult => {
+            // ×½ с округлением вверх
+            SkillRating::new(val.half_ceil())
+        }
+        DifficultyModifier::Extreme => {
+            // ×⅕ — стандартное значение для сложных задач в BRP
+            SkillRating::new(val.saturating_mul(20).saturating_div(100))
+        }
     }
 }
 
@@ -26,7 +49,9 @@ const fn primary_mod(stat: u16) -> i16 {
 
 #[inline(always)]
 const fn secondary_mod(stat: u16) -> i16 {
-    (stat as i16 - HUMAN_AVERAGE_STAT as i16) / 2
+    let diff = stat as i16 - HUMAN_AVERAGE_STAT as i16;
+    // Округление вверх для положительных, вниз для отрицательных
+    if diff >= 0 { (diff + 1) / 2 } else { diff / 2 }
 }
 
 #[inline(always)]
@@ -36,7 +61,7 @@ const fn negative_mod(stat: u16) -> i16 {
 
 /// Вычисляет бонус категории навыков по классической сложной формуле (стр. 43).
 #[inline]
-pub fn calculate_category_bonus(
+pub const fn calculate_category_bonus(
     category: SkillCategory,
     chars: &CharacteristicBlock,
     config: &GameSessionConfig,
@@ -116,7 +141,48 @@ pub fn calculate_effective_skill(
     // 2. Применяем ситуативные модификаторы (+20%, -50% и т.д.)
     let final_value = (rating_after_difficulty.get() as i16)
         .saturating_add(situational_modifiers_sum)
-        .clamp(0, u16::MAX as i16) as u16;
+        .clamp(0, D100_MAX as i16) as u16;
 
     SkillRating::new(final_value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_difficulty_easy_caps_at_100() {
+        let base = SkillRating::new(60);
+        let result = apply_difficulty(base, DifficultyModifier::Easy);
+        assert_eq!(result.get(), 100); // Не 120!
+    }
+
+    #[test]
+    fn test_difficulty_extreme() {
+        let base = SkillRating::new(75);
+        let result = apply_difficulty(base, DifficultyModifier::Extreme);
+        assert_eq!(result.get(), 15); // 75 / 5 = 15
+    }
+
+    #[test]
+    fn test_effective_skill_with_situational_mods() {
+        let base = SkillRating::new(50);
+        let result = calculate_effective_skill(
+            base,
+            DifficultyModifier::Difficult, // 50 → 25
+            30,                            // +30% за отличные инструменты
+        );
+        assert_eq!(result.get(), 55); // 25 + 30 = 55, не больше 100
+    }
+
+    #[test]
+    fn test_automatic_bypasses_modifiers() {
+        let base = SkillRating::new(10);
+        let result = calculate_effective_skill(
+            base,
+            DifficultyModifier::Automatic,
+            -50, // Даже огромный штраф не влияет
+        );
+        assert!(result.is_automatic());
+    }
 }

@@ -50,4 +50,14 @@ impl SkillRating {
     pub const fn get(self) -> u16 {
         self.0
     }
+
+    #[inline(always)]
+    pub const fn is_automatic(self) -> bool {
+        self.get() == u16::MAX
+    }
+
+    #[inline(always)]
+    pub const fn is_impossible(self) -> bool {
+        self.get() == 0
+    }
 }

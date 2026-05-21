@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::DamageModifier;
 use crate::domain::chars::CharacteristicBlock;
 use crate::types::{
     HitPoints, MovementRate, PowerPoints, ProfessionId, SkillRating, SkillType, WealthLevel,
 };
+use crate::{BodyPlan, DamageModifier};
 
 /// Производные параметры (Derived Characteristics, стр. 34).
 /// В MMO их лучше кэшировать в профиле, но обновлять при изменении базовых статов.
@@ -27,6 +27,7 @@ pub struct CharacterProfile {
     pub age: u16,
     pub profession: ProfessionId,
     pub wealth: WealthLevel,
+    pub body_plan: BodyPlan,
 
     pub base_stats: CharacteristicBlock,
     pub derived_stats: DerivedStats,
