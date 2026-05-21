@@ -1,3 +1,4 @@
+use crate::OpposedOutcome;
 use crate::math::BrpFractions;
 use crate::types::{CharacteristicMarker, D100Roll, SkillRating, Stat, SuccessLevel};
 
@@ -86,4 +87,40 @@ pub fn resolve_resistance<T: CharacteristicMarker>(
     let resistance_rating = SkillRating::new(clamped_chance);
 
     resolve_skill(roll, resistance_rating)
+}
+
+/// Разрешает Встречную Проверку (Opposed Roll, стр. 26).
+/// Используется в бою (Атака vs Защита) или соревнованиях навыков (Hide vs Spot).
+pub fn resolve_opposed(
+    active_rating: SkillRating,
+    active_roll: D100Roll,
+    passive_rating: SkillRating,
+    passive_roll: D100Roll,
+) -> OpposedOutcome {
+    let active_res = resolve_skill(active_roll, active_rating);
+    let passive_res = resolve_skill(passive_roll, passive_rating);
+
+    // 1. Сравниваем уровни успеха (Critical > Special > Success > Failure > Fumble)
+    if active_res > passive_res {
+        return OpposedOutcome::ActiveWins(active_res);
+    }
+    if passive_res > active_res {
+        return OpposedOutcome::PassiveWins(passive_res);
+    }
+
+    // 2. Если уровни успеха равны (оба выкинули Success, или оба Special):
+    // В BRP UGE (стр. 26) побеждает тот, у кого ВЫШЕ базовый навык.
+    if active_res.is_success() {
+        if active_rating.get() > passive_rating.get() {
+            return OpposedOutcome::ActiveWins(active_res);
+        }
+        if passive_rating.get() > active_rating.get() {
+            return OpposedOutcome::PassiveWins(passive_res);
+        }
+        // Если шансы равны, объявляем ничью
+        return OpposedOutcome::Tie;
+    }
+
+    // Если оба провалились (Failure или Fumble), никто не побеждает
+    OpposedOutcome::Tie
 }

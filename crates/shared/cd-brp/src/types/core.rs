@@ -19,11 +19,34 @@ pub enum PowerLevel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SuccessLevel {
-    Fumble,
-    Failure,
-    Success,
-    SpecialSuccess,
-    CriticalSuccess,
+    Fumble,          // Крит. провал (обычно 99-00)
+    Failure,         // Провал (бросок > шанса)
+    Success,         // Успех (бросок <= шанса)
+    SpecialSuccess,  // Особый успех (бросок <= 1/5 шанса)
+    CriticalSuccess, // Критический успех (бросок <= 1/20 шанса)
+}
+
+impl SuccessLevel {
+    /// Проверка на любой положительный успех
+    pub const fn is_success(&self) -> bool {
+        matches!(
+            self,
+            Self::Success | Self::SpecialSuccess | Self::CriticalSuccess
+        )
+    }
+
+    /// Проверка на провал
+    pub const fn is_failure(&self) -> bool {
+        matches!(self, Self::Failure | Self::Fumble)
+    }
+}
+
+/// Результат встречной проверки (Opposed Roll, стр. 26).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OpposedOutcome {
+    ActiveWins(SuccessLevel),
+    PassiveWins(SuccessLevel),
+    Tie, // Ничья (редко, но бывает)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
