@@ -79,6 +79,7 @@ pub enum WeaponClass {
     Revolver,
     Rifle,
     RifleEnergy,
+    Shield,
     Shotgun,
     Spear,
     Staff,

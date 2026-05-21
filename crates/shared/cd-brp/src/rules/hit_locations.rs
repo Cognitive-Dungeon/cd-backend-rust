@@ -79,13 +79,13 @@ pub const fn location_hp_fraction(location: HitLocation, total_hp: u16) -> u16 {
         // Каждая нога, рука, живот, голова = 1/3 от Max HP (округление вверх)
         RightLeg | LeftLeg | RightArm | LeftArm | Abdomen | Head | RightHindleg | LeftHindleg
         | RightForeleg | LeftForeleg | RightWing | LeftWing => {
-            (total_hp + 2) / 3 // Целочисленное деление с округлением вверх (ceil)
+            total_hp.div_ceil(3) // Целочисленное деление с округлением вверх (ceil)
         }
 
         // Грудь (Chest) и туловища животных = 4/10 (или 40%) от Max HP (округление вверх)
-        Chest | Hindquarters | Forequarters | Body => (total_hp * 4 + 9) / 10,
+        Chest | Hindquarters | Forequarters | Body => (total_hp * 4).div_ceil(10),
 
         // Хвост = 1/4 от Max HP
-        Tail => (total_hp + 3) / 4,
+        Tail => total_hp.div_ceil(4),
     }
 }
