@@ -3,6 +3,7 @@
 pub mod character;
 pub mod combat_matrix;
 pub mod damage;
+pub mod hit_locations;
 pub mod modifiers;
 pub mod resolution;
 pub mod skills;
