@@ -1,5 +1,4 @@
 use bevy::ecs::{bundle::Bundle, name::Name};
-use cd_brp::{ActionPoints, Anatomy, Characteristics, Encumbrance};
 
 use crate::{
     Stats,

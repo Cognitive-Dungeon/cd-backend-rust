@@ -16,7 +16,7 @@ pub struct RangedShotContext {
     /// Двигается ли цель на скорости > половины своего MOV (стр. 62)
     pub target_moving: bool,
     /// Стрельба в свалку ближнего боя (стр. 61)
-    pub in_melee: bool,
+    pub shooting_into_melee: bool,
 }
 
 /// Вычисляет финальный шанс попадания при дистанционной атаке.
@@ -42,11 +42,11 @@ pub fn calculate_ranged_chance(ctx: RangedShotContext) -> SkillRating {
         // Point-Blank (В упор) -> Easy (x2 шанс)
         RangeCategory::PointBlank => DifficultyModifier::Easy,
         // Base Range (В пределах базовой дистанции оружия) -> Average
-        RangeCategory::Normal => DifficultyModifier::Average,
+        RangeCategory::BaseRange => DifficultyModifier::Average,
         // Double Base Range -> Difficult (x1/2 шанс)
-        RangeCategory::Medium => DifficultyModifier::Difficult,
+        RangeCategory::DoubleBaseRange => DifficultyModifier::Difficult,
         // Свыше двойной дистанции стрельба невозможна
-        RangeCategory::Long => DifficultyModifier::Impossible,
+        RangeCategory::BeyondDoubleBaseRange => DifficultyModifier::Impossible,
     };
     current_skill = apply_difficulty(current_skill, range_diff);
 
@@ -66,7 +66,7 @@ pub fn calculate_ranged_chance(ctx: RangedShotContext) -> SkillRating {
 
     // 5. Стрельба в ближний бой (Shooting into Melee, стр. 61)
     // "Shooting into Melee" -> Difficult. При провале есть шанс попасть в союзника.
-    if ctx.in_melee {
+    if ctx.shooting_into_melee {
         current_skill = apply_difficulty(current_skill, DifficultyModifier::Difficult);
     }
 

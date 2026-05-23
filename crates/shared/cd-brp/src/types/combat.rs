@@ -62,13 +62,18 @@ pub enum CombatAction {
     Speak,
 }
 
+/// Категории дистанции дистанционного боя (стр. 60-61 рулбука).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RangeCategory {
+    /// В упор (до DEX метров). Шанс становится Easy (x2).
     PointBlank,
-    Normal,
-    Medium,
-    Long,
+    /// Базовая дальность оружия. Шанс обычный.
+    BaseRange,
+    /// До двойной базовой дальности. Шанс становится Difficult (x1/2).
+    DoubleBaseRange,
+    /// Свыше двойной дальности. Выстрел невозможен для обычного оружия.
+    BeyondDoubleBaseRange,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
