@@ -127,3 +127,14 @@ pub enum ArmorBurden {
     Moderate,
     Cumbersome,
 }
+
+/// Длина оружия ближнего боя (Weapon Length, Стр. 49).
+/// Влияет на базовую скорость удара (Strike Rank).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WeaponLength {
+    Short = 3,    // Кинжалы, кастеты (SR 3)
+    Medium = 2,   // Короткие и длинные мечи, топоры (SR 2)
+    Long = 1,     // Копья, двуручные мечи (SR 1)
+    VeryLong = 0, // Пики, длинные копья (SR 0)
+}

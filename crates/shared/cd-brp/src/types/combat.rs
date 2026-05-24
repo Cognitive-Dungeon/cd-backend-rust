@@ -118,3 +118,21 @@ pub enum DamageType {
     Gravity,    // Гравитация
     Wind,       // Ветер
 }
+
+/// Строгий тип для Strike Rank (Инициатива, Стр. 35, 48-49).
+/// Чем МЕНЬШЕ значение, тем быстрее действует персонаж (1 - очень быстро, 10 - медленно).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct StrikeRank(pub u8);
+
+impl StrikeRank {
+    #[inline]
+    pub const fn new(val: u8) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u8 {
+        self.0
+    }
+}

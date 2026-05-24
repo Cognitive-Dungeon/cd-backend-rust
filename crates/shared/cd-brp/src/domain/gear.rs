@@ -2,7 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{DefId, DieType, HandednessReq, HitPoints, SpecialSuccessEffect, WeaponClass};
+use crate::{
+    DefId, DieType, HandednessReq, HitPoints, SpecialSuccessEffect, WeaponClass, WeaponLength,
+};
 
 /// Статический чертеж (Blueprint) оружия.
 /// Загружается в память сервера один раз при старте.
@@ -18,4 +20,5 @@ pub struct WeaponBlueprint {
     pub can_parry: bool,
     pub min_str: u8,
     pub min_dex: u8,
+    pub length: Option<WeaponLength>,
 }

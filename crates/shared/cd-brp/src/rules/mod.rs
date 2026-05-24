@@ -10,6 +10,7 @@ pub mod modifiers;
 pub mod ranged_combat;
 pub mod resolution;
 pub mod skills;
+pub mod strike_rank;
 
 pub use character::{
     calculate_derived_stats, calculate_personal_budget, calculate_professional_budget,
