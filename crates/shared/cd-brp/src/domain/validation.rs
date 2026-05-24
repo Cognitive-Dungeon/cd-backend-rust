@@ -11,10 +11,7 @@ use crate::rules::character::{
 use crate::types::{
     GameSessionConfig, PowerLevel, ProfessionId, SkillRating, SkillType, WealthLevel,
 };
-use crate::{
-    BodyPlan, DefId, calc_dodge_base, calc_fly_base, calc_gaming_base, calc_language_own_base,
-    calc_projection_base, calculate_category_bonus,
-};
+use crate::{BodyPlan, DefId, calculate_category_bonus};
 
 #[derive(Error, Debug)]
 pub enum ValidationError {
@@ -83,44 +80,6 @@ const UNIVERSAL_BASE_SKILLS: &[SkillType] = &[
     SkillType::Track,
 ];
 
-/// Вспомогательная функция-фасад для вычисления базового шанса (Base Chance).
-/// Она объединяет статичные правила BRP и динамические характеристики конкретного персонажа.
-fn resolve_initial_skill_base(
-    skill: &SkillType,
-    stats: &CharacteristicBlock,
-    body_plan: BodyPlan,
-    config: &GameSessionConfig,
-) -> u16 {
-    // 1. Если навык имеет жестко заданную базу (например, Climb 40%), возвращаем её.
-    if let Some(base) = skill.static_base_chance() {
-        return base;
-    }
-
-    // 2. Иначе вычисляем динамическую базу на основе статов
-    match skill {
-        SkillType::Dodge => calc_dodge_base(stats.dex),
-        SkillType::Projection => calc_projection_base(stats.dex),
-        SkillType::Fly => {
-            let has_wings = matches!(
-                body_plan,
-                BodyPlan::Winged | BodyPlan::WingedFourLegged | BodyPlan::WingedHumanoid
-            );
-            calc_fly_base(stats.dex, has_wings)
-        }
-        SkillType::Gaming => calc_gaming_base(stats.int, stats.pow),
-        SkillType::LanguageOwn(_) => {
-            calc_language_own_base(stats.int, stats.edu, config.use_education_stat)
-        }
-        SkillType::Literacy(_) => {
-            // По правилам, грамотность в родном языке обычно равна (INTx5/EDUx5).
-            // Мы можем условно считать любую Literacy на старте равной этой базе,
-            // либо требовать явной настройки. Используем стандартную базу языка.
-            calc_language_own_base(stats.int, stats.edu, config.use_education_stat)
-        }
-        _ => 0, // Fallback (не должен срабатывать при полном покрытии)
-    }
-}
-
 /// Чистая функция-компилятор.
 /// Принимает сырые данные и конфиг сервера, прогоняет через рулбук и возвращает готового персонажа или ошибку.
 pub fn validate_and_build(
@@ -184,6 +143,12 @@ pub fn validate_and_build(
         PowerLevel::Superhuman => u16::MAX,
     };
 
+    let ctx = crate::rules::skills::BaseChanceContext {
+        stats: &draft.stats,
+        body_plan: draft.body_plan,
+        config,
+    };
+
     let mut final_skills = BTreeMap::new();
 
     // 4. ВЫЧИСЛЕНИЕ ФИНАЛЬНЫХ ЗНАЧЕНИЙ
@@ -196,7 +161,7 @@ pub fn validate_and_build(
             .unwrap_or(0);
 
         // 3.1. Получаем базу (например, 40% для Climb или DEXx2 для Dodge)
-        let base_chance = resolve_initial_skill_base(&skill, &draft.stats, draft.body_plan, config);
+        let base_chance = skill.base_chance(&ctx);
 
         // 3.2. Вычисляем бонус категории (может быть отрицательным!)
         let category_bonus = if config.use_skill_category_bonuses {

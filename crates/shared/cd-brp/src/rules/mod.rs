@@ -20,6 +20,3 @@ pub use modifiers::{
     calculate_simple_category_bonus,
 };
 pub use resolution::{BrpThresholds, resolve_resistance, resolve_skill};
-pub use skills::{
-    calc_dodge_base, calc_fly_base, calc_gaming_base, calc_language_own_base, calc_projection_base,
-};

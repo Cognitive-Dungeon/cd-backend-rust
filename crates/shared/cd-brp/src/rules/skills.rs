@@ -1,7 +1,18 @@
-use crate::{Characteristic, Dex, Edu, Int, KnowledgeType, Pow, Stat, VehicleCategory};
+use crate::domain::CharacteristicBlock;
+use crate::{
+    BodyPlan, Characteristic, Dex, Edu, GameSessionConfig, Int, KnowledgeType, Pow, Stat,
+    VehicleCategory,
+};
 // src/rules/skills.rs
 use crate::math::frac_u16;
 use crate::types::{SkillCategory, SkillType};
+
+/// Контекст персонажа, необходимый для вычисления динамических шансов навыков.
+pub struct BaseChanceContext<'a> {
+    pub stats: &'a CharacteristicBlock,
+    pub body_plan: BodyPlan,
+    pub config: &'a GameSessionConfig,
+}
 
 impl SkillType {
     /// Возвращает категорию навыка.
@@ -106,6 +117,43 @@ impl SkillType {
         }
     }
 
+    /// Возвращает базовый шанс для любого навыка
+    pub fn base_chance(&self, ctx: &BaseChanceContext) -> u16 {
+        // Если навык имеет жесткую статику (например, Climb 40%), сразу возвращаем её
+        if let Some(static_chance) = self.static_base_chance() {
+            return static_chance;
+        }
+
+        // Если статики нет (возвращен None), навык ОБЯЗАН быть рассчитан динамически.
+        match self {
+            SkillType::Dodge => calc_dodge_base(ctx.stats.dex),
+            SkillType::Projection => calc_projection_base(ctx.stats.dex),
+
+            SkillType::Fly => {
+                let has_wings = matches!(
+                    ctx.body_plan,
+                    BodyPlan::Winged
+                        | BodyPlan::WingedFourLegged
+                        | BodyPlan::WingedFourLeggedWithTail
+                        | BodyPlan::WingedHumanoid
+                );
+                calc_fly_base(ctx.stats.dex, has_wings)
+            }
+            SkillType::Gaming => calc_gaming_base(ctx.stats.int, ctx.stats.pow),
+
+            SkillType::LanguageOwn(_) | SkillType::Literacy(_) => {
+                calc_language_own_base(ctx.stats.int, ctx.stats.edu, ctx.config.use_education_stat)
+            }
+
+            // Если мы добавили навык, для которого static_base_chance() вернул None,
+            // но забыли прописать его формулу здесь, программа упадет на этапе тестирования.
+            _ => unreachable!(
+                "Skill {:?} returned None for static_base_chance but has no dynamic formula!",
+                self
+            ),
+        }
+    }
+
     /// Определяет ключевую характеристику, от которой зависит навык.
     /// Позволяет глобальным эффектам (болезни, перегруз, ослепление)
     /// автоматически штрафовать целые группы навыков.
@@ -159,15 +207,15 @@ impl SkillType {
     }
 }
 
-pub const fn calc_dodge_base(dex: Stat<Dex>) -> u16 {
+const fn calc_dodge_base(dex: Stat<Dex>) -> u16 {
     dex.get().saturating_mul(2)
 }
 
-pub const fn calc_projection_base(dex: Stat<Dex>) -> u16 {
+const fn calc_projection_base(dex: Stat<Dex>) -> u16 {
     dex.get().saturating_mul(2)
 }
 
-pub const fn calc_fly_base(dex: Stat<Dex>, has_wings: bool) -> u16 {
+const fn calc_fly_base(dex: Stat<Dex>, has_wings: bool) -> u16 {
     if has_wings {
         dex.get().saturating_mul(4)
     } else {
@@ -175,11 +223,11 @@ pub const fn calc_fly_base(dex: Stat<Dex>, has_wings: bool) -> u16 {
     }
 }
 
-pub const fn calc_gaming_base(int: Stat<Int>, pow: Stat<Pow>) -> u16 {
+const fn calc_gaming_base(int: Stat<Int>, pow: Stat<Pow>) -> u16 {
     int.get().saturating_add(pow.get())
 }
 
-pub fn calc_language_own_base(int: Stat<Int>, edu: Option<Stat<Edu>>, use_edu_rule: bool) -> u16 {
+fn calc_language_own_base(int: Stat<Int>, edu: Option<Stat<Edu>>, use_edu_rule: bool) -> u16 {
     let stat = if use_edu_rule {
         edu.map(|e| e.get()).unwrap_or_else(|| int.get())
     } else {
