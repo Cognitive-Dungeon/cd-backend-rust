@@ -1,8 +1,6 @@
-use serde_json::error::Category;
-
-use crate::{Dex, Edu, Int, KnowledgeType, Pow, Stat, VehicleCategory};
+use crate::{Characteristic, Dex, Edu, Int, KnowledgeType, Pow, Stat, VehicleCategory};
 // src/rules/skills.rs
-use crate::math::BrpFractions;
+use crate::math::frac_u16;
 use crate::types::{SkillCategory, SkillType};
 
 impl SkillType {
@@ -13,8 +11,9 @@ impl SkillType {
 
         match self {
             // Combat
-            Artillery(_) | Brawl | EnergyWeapon(_) | Firearm(_) | Grapple | HeavyWeapon(_)
-            | MartialArts(_) | MeleeWeapon(_) | MissileWeapon(_) | Parry(_) | Shield(_) => Combat,
+            WeaponAttack(_, _) | Parry(_, _) | Shield(_) | Brawl | Grapple | MartialArts(_) => {
+                Combat
+            }
 
             // Communication
             Bargain | Command | Disguise | Etiquette(_) | FastTalk | LanguageOwn(_)
@@ -78,8 +77,7 @@ impl SkillType {
             Pilot(_) => Some(1),
 
             // === ОРУЖИЕ (Зависит от чертежа, база здесь 0) ===
-            Artillery(_) | EnergyWeapon(_) | Firearm(_) | HeavyWeapon(_) | MeleeWeapon(_)
-            | MissileWeapon(_) | Parry(_) | Shield(_) => Some(0),
+            WeaponAttack(_, _) | Parry(_, _) | Shield(_) => Some(0),
 
             // === 40% ===
             Climb => Some(40),
@@ -107,6 +105,58 @@ impl SkillType {
             | Science(_) | Strategy => Some(1),
         }
     }
+
+    /// Определяет ключевую характеристику, от которой зависит навык.
+    /// Позволяет глобальным эффектам (болезни, перегруз, ослепление)
+    /// автоматически штрафовать целые группы навыков.
+    pub const fn primary_characteristic(&self) -> Characteristic {
+        use Characteristic::*;
+        use SkillType::*;
+
+        // Все боевые навыки (и оружие, и рукопашная) требуют координации (Dex)
+        if matches!(self.category(), crate::types::SkillCategory::Combat) {
+            return Dex;
+        }
+
+        match self {
+            // === Ловкость и Координация (DEX) ===
+            // Сюда попадает всё оружие, уклонение, скрытность, вождение и манипуляции
+            WeaponAttack(_, _)
+            | Parry(_, _)
+            | Shield(_)
+            | MartialArts(_)
+            | Dodge
+            | Stealth
+            | Hide
+            | SleightOfHand
+            | FineManipulation
+            | Drive(_)
+            | Pilot(_)
+            | Fly
+            | Ride(_) => Dex,
+
+            // === Физическая Сила (STR) ===
+            // Навыки, где чистая физика важнее координации
+            Brawl | Grapple | Climb | Jump | Swim | Throw => Str,
+
+            // === Интеллект и Знания (INT) ===
+            // Ремесло, медицина, науки, языки
+            Appraise | Craft(_) | Demolition | FirstAid | Medicine | Navigate | Repair(_)
+            | Science(_) | Strategy | TechnicalSkill(_) | Knowledge(_) | LanguageOwn(_)
+            | LanguageOther(_) | Literacy(_) | Gaming => Int,
+
+            // === Восприятие и Воля (POW / INT) ===
+            // В BRP Восприятие часто привязано к POW или INT (мы используем POW для чутья)
+            Insight | Listen | Sense | Spot | Track | Projection | Psychotherapy | Research => Pow,
+
+            // === Общение и Харизма (CHA) ===
+            Bargain | Command | Disguise | Etiquette(_) | FastTalk | Perform(_) | Persuade
+            | Status(_) | Teach | Art(_) => Cha,
+
+            // HeavyMachine может быть INT или DEX, пусть будет INT (понимание механизмов)
+            HeavyMachine(_) => Int,
+        }
+    }
 }
 
 pub const fn calc_dodge_base(dex: Stat<Dex>) -> u16 {
@@ -117,11 +167,11 @@ pub const fn calc_projection_base(dex: Stat<Dex>) -> u16 {
     dex.get().saturating_mul(2)
 }
 
-pub fn calc_fly_base(dex: Stat<Dex>, has_wings: bool) -> u16 {
+pub const fn calc_fly_base(dex: Stat<Dex>, has_wings: bool) -> u16 {
     if has_wings {
         dex.get().saturating_mul(4)
     } else {
-        dex.get().half_ceil()
+        frac_u16::half_ceil(dex.get())
     }
 }
 

@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 /// Трейт-маркер для всех характеристик BRP.
 pub trait CharacteristicMarker {
     const NAME: &'static str;
@@ -24,3 +26,17 @@ define_marker!(Pow, "Power", "POW");
 define_marker!(Dex, "Dexterity", "DEX");
 define_marker!(Cha, "Charisma", "CHA");
 define_marker!(Edu, "Education", "EDU");
+
+/// Перечисление базовых характеристик (удобно для тегирования навыков и эффектов).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Characteristic {
+    Str,
+    Con,
+    Siz,
+    Int,
+    Pow,
+    Dex,
+    Cha,
+    Edu,
+}

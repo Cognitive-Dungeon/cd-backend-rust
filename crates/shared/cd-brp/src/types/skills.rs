@@ -43,15 +43,13 @@ pub enum SkillType {
     Throw,
     Track,
 
-    // === Зависимые навыки (явная связь с WeaponClass) ===
-    Artillery(WeaponClass),
-    EnergyWeapon(WeaponClass),
-    Firearm(WeaponClass),
-    HeavyWeapon(WeaponClass),
-    MeleeWeapon(WeaponClass),
-    MissileWeapon(WeaponClass),
-    Parry(WeaponClass),
-    // TODO: Вывести отдельное перечесление для типов щитов
+    /// Любая атака оружием: WeaponAttack(Firearm, Pistol) или WeaponAttack(Melee, Sword)
+    WeaponAttack(WeaponSkillCategory, WeaponClass),
+
+    /// Парирование конкретным оружием (часто качается отдельно или равно атаке)
+    Parry(WeaponSkillCategory, WeaponClass),
+
+    /// Щиты (отдельная сущность, так как ими можно и бить, и парировать)
     Shield(WeaponClass),
 
     // === Навыки со специализациями (содержат ID специализации) ===
@@ -72,6 +70,18 @@ pub enum SkillType {
     Science(ScienceType),
     Status(DefId), // Статус привязан к обществу/гильдии (DefId)
     TechnicalSkill(TechnicalType),
+}
+
+/// Категории оружейных навыков (стр. 69-70).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WeaponSkillCategory {
+    Artillery,
+    Energy,
+    Firearm,
+    Heavy,
+    Melee,
+    Missile,
 }
 
 /// Виды искусства (Art)
