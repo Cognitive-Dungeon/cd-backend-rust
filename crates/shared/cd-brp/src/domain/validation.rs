@@ -4,6 +4,7 @@ use thiserror::Error;
 
 use crate::domain::character::{CharacterProfile, DerivedStats};
 use crate::domain::chars::CharacteristicBlock;
+use crate::progression::ExperienceChecks;
 use crate::rules::character::{
     calculate_derived_stats, calculate_personal_budget, calculate_professional_budget,
 };
@@ -199,5 +200,6 @@ pub fn validate_and_build(
         derived_stats: derived,
         skills: final_skills,
         body_plan: draft.body_plan,
+        experience_checks: ExperienceChecks::default(),
     })
 }

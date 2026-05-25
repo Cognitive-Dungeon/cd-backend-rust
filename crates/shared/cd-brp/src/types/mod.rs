@@ -14,6 +14,7 @@ pub mod physical;
 pub mod pools;
 pub mod powers;
 pub mod profession;
+pub mod progression;
 pub mod psychology;
 pub mod skills;
 pub mod stats;

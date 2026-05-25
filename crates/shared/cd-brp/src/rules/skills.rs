@@ -205,6 +205,14 @@ impl SkillType {
             HeavyMachine(_) => Int,
         }
     }
+
+    /// Определяет, может ли навык получать "галочки опыта" (Experience Checks).
+    /// Стр. 45: "Language (Own) cannot normally be improved by experience checks."
+    /// Стр. 70: Status меняется по решению Мастера, а не кубиками.
+    pub const fn can_improve_by_experience(&self) -> bool {
+        use SkillType::*;
+        !matches!(self, LanguageOwn(_) | Status(_))
+    }
 }
 
 const fn calc_dodge_base(dex: Stat<Dex>) -> u16 {

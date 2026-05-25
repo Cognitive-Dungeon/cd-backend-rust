@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 use crate::domain::chars::CharacteristicBlock;
+use crate::progression::{ExperienceBonus, ExperienceChecks};
 use crate::types::{
     HitPoints, MovementRate, PowerPoints, ProfessionId, SkillRating, SkillType, WealthLevel,
 };
@@ -15,7 +16,7 @@ pub struct DerivedStats {
     pub max_mp: PowerPoints,
     pub damage_modifier: DamageModifier,
     pub base_movement: MovementRate,
-    pub experience_bonus: u16,
+    pub experience_bonus: ExperienceBonus,
     pub major_wound_threshold: HitPoints,
 }
 
@@ -34,6 +35,7 @@ pub struct CharacterProfile {
 
     /// BTreeMap используется для детерминированной сортировки и быстрого поиска.
     pub skills: BTreeMap<SkillType, SkillRating>,
+    pub experience_checks: ExperienceChecks,
 }
 
 impl CharacterProfile {

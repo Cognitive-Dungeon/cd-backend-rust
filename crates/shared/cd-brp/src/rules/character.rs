@@ -1,6 +1,7 @@
 // src/rules/character.rs
 use crate::domain::character::DerivedStats;
 use crate::domain::chars::CharacteristicBlock;
+use crate::progression::ExperienceBonus;
 use crate::types::{
     DamageModifier, DieType, Edu, GameSessionConfig, HitPoints, HpCalculationRule, Int,
     ModifierSign, PowerLevel, PowerPoints, Stat,
@@ -57,7 +58,7 @@ pub fn calculate_derived_stats(
         max_mp: PowerPoints::new(stats.pow.get() as i16),
         damage_modifier: dmg_mod,
         base_movement: crate::types::MovementRate(10),
-        experience_bonus: (stats.int.get() as f32 / 2.0).ceil() as u16,
+        experience_bonus: ExperienceBonus::new((stats.int.get() as f32 / 2.0).ceil() as u16),
         major_wound_threshold: HitPoints::new((hp_val as f32 / 2.0).ceil() as i16),
     }
 }

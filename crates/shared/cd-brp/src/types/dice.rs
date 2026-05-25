@@ -22,7 +22,7 @@ impl D100Roll {
     }
 
     #[inline]
-    pub(crate) const fn new_unchecked(value: u16) -> Self {
+    pub(crate) const fn new(value: u16) -> Self {
         Self(value)
     }
 
@@ -35,6 +35,38 @@ impl D100Roll {
 impl fmt::Display for D100Roll {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+/// Строгий тип для броска улучшения навыка (Growth Roll).
+// По умолчанию в BRP это 1D6, но мы допускаем расширение до 1D10 для талантов.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct GrowthRoll(u8);
+
+impl GrowthRoll {
+    pub const MAX_GROWTH: u8 = 6; // Стандарт 6, но если берем запас под таланты то 10
+
+    pub fn try_new(value: u8) -> Result<Self, TypeError> {
+        if (1..=Self::MAX_GROWTH).contains(&value) {
+            Ok(Self(value))
+        } else {
+            Err(TypeError::InvalidGrowthRoll {
+                value,
+                min: 1,
+                max: Self::MAX_GROWTH,
+            })
+        }
+    }
+
+    #[inline]
+    pub(crate) const fn new(value: u8) -> Self {
+        Self(value)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u16 {
+        self.0 as u16
     }
 }
 
