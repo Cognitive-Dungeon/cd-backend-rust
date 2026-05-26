@@ -10,6 +10,7 @@ pub mod hit_locations;
 pub mod modifiers;
 pub mod ranged_combat;
 pub mod resolution;
+pub mod sanity;
 pub mod skills;
 pub mod strike_rank;
 
