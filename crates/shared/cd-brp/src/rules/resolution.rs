@@ -111,10 +111,10 @@ pub fn resolve_opposed(
     // 2. Если уровни успеха равны (оба выкинули Success, или оба Special):
     // В BRP UGE (стр. 26) побеждает тот, у кого ВЫШЕ базовый навык.
     if active_res.is_success() {
-        if active_rating.get() > passive_rating.get() {
+        if active_rating > passive_rating {
             return OpposedOutcome::ActiveWins(active_res);
         }
-        if passive_rating.get() > active_rating.get() {
+        if passive_rating > active_rating {
             return OpposedOutcome::PassiveWins(passive_res);
         }
         // Если шансы равны, объявляем ничью

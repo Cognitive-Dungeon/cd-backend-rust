@@ -70,7 +70,7 @@ pub fn apply_improvement(current_rating: SkillRating, result: ExperienceRollResu
         ExperienceRollResult::NoImprovement => current_rating,
         ExperienceRollResult::ImprovedBy(growth) => {
             // Теоретический кап для u16, но в реальности навыки редко уходят за 200-300%
-            SkillRating::new(current_rating.get().saturating_add(growth))
+            current_rating.saturating_add(growth)
         }
     }
 }
@@ -85,15 +85,15 @@ pub const fn calculate_mastery_target(
 ) -> MasteryTarget {
     let base_chance = if use_edu {
         if let Some(e) = edu {
-            e.know_chance().get() // Know Roll!
+            e.know_chance() // Know Roll!
         } else {
-            int.idea_chance().get() // Idea Roll!
+            int.idea_chance() // Idea Roll!
         }
     } else {
-        int.idea_chance().get()
+        int.idea_chance()
     };
 
-    MasteryTarget::new(base_chance)
+    MasteryTarget::new(base_chance.get())
 }
 
 #[cfg(test)]

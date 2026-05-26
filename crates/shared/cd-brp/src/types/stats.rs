@@ -112,6 +112,7 @@ pub struct SkillRating(u16);
 
 impl SkillRating {
     pub const ZERO: Self = Self(0);
+    pub const AUTOMATIC: Self = Self(u16::MAX);
 
     #[inline]
     pub const fn new(value: u16) -> Self {
@@ -131,5 +132,86 @@ impl SkillRating {
     #[inline(always)]
     pub const fn is_impossible(self) -> bool {
         self.get() == 0
+    }
+
+    #[inline]
+    pub const fn saturating_add(self, rhs: u16) -> Self {
+        Self(self.0.saturating_add(rhs))
+    }
+
+    /// Безопасное умножение (для модификаторов сложности)
+    #[inline]
+    pub const fn saturating_mul(self, rhs: u16) -> Self {
+        Self(self.0.saturating_mul(rhs))
+    }
+
+    /// Безопасное деление (защита от деления на 0)
+    #[inline]
+    pub const fn checked_div(self, rhs: u16) -> Option<Self> {
+        match self.0.checked_div(rhs) {
+            Some(val) => Some(Self(val)),
+            None => None,
+        }
+    }
+}
+
+impl std::ops::Add for SkillRating {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0.saturating_add(rhs.0))
+    }
+}
+
+impl std::ops::Add<u16> for SkillRating {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: u16) -> Self::Output {
+        Self(self.0.saturating_add(rhs))
+    }
+}
+
+impl std::ops::Sub for SkillRating {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0.saturating_sub(rhs.0))
+    }
+}
+
+impl std::ops::AddAssign for SkillRating {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 = self.0.saturating_add(rhs.0);
+    }
+}
+
+impl std::ops::SubAssign for SkillRating {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 = self.0.saturating_sub(rhs.0);
+    }
+}
+
+impl fmt::Display for SkillRating {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_automatic() {
+            write!(f, "Auto")
+        } else {
+            write!(f, "{}%", self.0)
+        }
+    }
+}
+
+impl std::str::FromStr for SkillRating {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let clean_str = s.trim().trim_end_matches('%');
+        let val = clean_str.parse::<u16>()?;
+        Ok(Self(val))
     }
 }

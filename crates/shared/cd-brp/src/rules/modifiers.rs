@@ -22,7 +22,7 @@ pub fn apply_difficulty(rating: SkillRating, difficulty: DifficultyModifier) -> 
 
     match difficulty {
         // Специальные значения — не участвуют в обычных расчётах
-        DifficultyModifier::Automatic => SkillRating::new(u16::MAX),
+        DifficultyModifier::Automatic => SkillRating::AUTOMATIC,
         DifficultyModifier::Impossible => SkillRating::ZERO,
 
         // Мультипликативные модификаторы (стр. 23-24)

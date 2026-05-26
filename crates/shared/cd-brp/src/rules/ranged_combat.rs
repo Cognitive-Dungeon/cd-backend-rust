@@ -30,7 +30,7 @@ pub fn calculate_ranged_chance(ctx: RangedShotContext) -> SkillRating {
     if ctx.aiming_rounds > 0 {
         // В BRP модификаторы шанса применяются до умножения сложности
         let aim_bonus = (ctx.aiming_rounds.min(3) as u16) * 10;
-        current_skill = SkillRating::new(current_skill.get().saturating_add(aim_bonus));
+        current_skill = current_skill.saturating_add(aim_bonus);
     }
 
     // 2. Модификатор дистанции (стр. 60-61)
