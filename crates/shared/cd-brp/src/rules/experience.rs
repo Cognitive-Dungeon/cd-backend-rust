@@ -83,17 +83,17 @@ pub const fn calculate_mastery_target(
     edu: Option<Stat<Edu>>,
     use_edu: bool,
 ) -> MasteryTarget {
-    let base_stat = if use_edu {
+    let base_chance = if use_edu {
         if let Some(e) = edu {
-            e.get()
+            e.know_chance().get() // Know Roll!
         } else {
-            int.get()
+            int.idea_chance().get() // Idea Roll!
         }
     } else {
-        int.get()
+        int.idea_chance().get()
     };
 
-    MasteryTarget::new(base_stat.saturating_mul(5))
+    MasteryTarget::new(base_chance)
 }
 
 #[cfg(test)]

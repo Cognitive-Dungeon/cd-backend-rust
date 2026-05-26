@@ -1,3 +1,5 @@
+use crate::{Cha, Con, Dex, Edu, Int, Pow, Str};
+
 use super::markers::CharacteristicMarker;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -24,6 +26,76 @@ impl<T: CharacteristicMarker> Stat<T> {
     #[inline]
     pub const fn get(self) -> u16 {
         self.value
+    }
+
+    /// Вычисляет процентный шанс для броска характеристики с заданным множителем (стр. 23).
+    /// Используется для задач разной сложности (например, ×1 для Impossible, ×3 для Hard).
+    #[inline]
+    pub const fn chance_multiplier(self, multiplier: u16) -> SkillRating {
+        SkillRating::new(self.value.saturating_mul(multiplier))
+    }
+
+    /// Стандартный бросок характеристики (Average = ×5).
+    /// Генерирует шанс (SkillRating), который напрямую совместим с `resolve_skill`.
+    #[inline]
+    pub const fn x5_chance(self) -> SkillRating {
+        self.chance_multiplier(5)
+    }
+}
+
+impl Stat<Str> {
+    /// Effort roll (STR × 5). Бросок Усилия (поднять, толкнуть, выломать дверь).
+    #[inline]
+    pub const fn effort_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Con> {
+    /// Stamina roll (CON × 5). Бросок Выносливости (сопротивление ядам, болезням, удушью).
+    #[inline]
+    pub const fn stamina_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Int> {
+    /// Idea roll (INT × 5). Бросок Идеи (осознание, догадки, риск сойти с ума).
+    #[inline]
+    pub const fn idea_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Pow> {
+    /// Luck roll (POW × 5). Бросок Удачи (везение, случайные обстоятельства).
+    #[inline]
+    pub const fn luck_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Dex> {
+    /// Agility roll (DEX × 5). Бросок Подвижности (баланс, реакция, избегание падения).
+    #[inline]
+    pub const fn agility_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Cha> {
+    /// Charisma roll (CHA × 5). Бросок Харизмы (первое впечатление, удача в общении).
+    #[inline]
+    pub const fn charisma_chance(self) -> SkillRating {
+        self.x5_chance()
+    }
+}
+
+impl Stat<Edu> {
+    /// Know roll (EDU × 5). Бросок Знаний (вспомнить общий факт).
+    #[inline]
+    pub const fn know_chance(self) -> SkillRating {
+        self.x5_chance()
     }
 }
 

@@ -59,8 +59,7 @@ pub fn resolve_sanity_encounter(
 /// ПРОВАЛ означает, что психика заблокировала шок (отрицание, ступор), и безумия нет.
 #[must_use]
 pub fn check_temporary_insanity(int_stat: Stat<Int>, idea_roll: D100Roll) -> bool {
-    // Idea roll в BRP = INT * 5
-    let idea_target = int_stat.get().saturating_mul(5);
+    let idea_target = int_stat.idea_chance().get();
 
     // Если выкинул меньше или равно порогу (УСПЕХ) -> Сходишь с ума (Возвращает true)
     idea_roll.get() <= idea_target
