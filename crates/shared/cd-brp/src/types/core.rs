@@ -109,3 +109,48 @@ pub enum MovementType {
     Slither,
     Burrow,
 }
+
+/// Строгий тип для расстояния в метрах.
+/// В BRP (и метрической системе) базовая единица дистанции.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct Meters(pub u32);
+
+impl Meters {
+    pub const ZERO: Self = Self(0);
+
+    #[inline]
+    pub const fn new(val: u32) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+}
+
+/// Строгий тип для количества Боевых Раундов (Combat Rounds).
+/// В BRP 1 раунд = 12 секунд. 5 раундов = 1 минута.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct CombatRounds(pub u32);
+
+impl CombatRounds {
+    pub const ZERO: Self = Self(0);
+
+    /// Конвертация игровых минут в боевые раунды (1 мин = 5 раундов).
+    pub const fn from_minutes(minutes: u32) -> Self {
+        Self(minutes.saturating_mul(5))
+    }
+
+    #[inline]
+    pub const fn new(val: u32) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+}

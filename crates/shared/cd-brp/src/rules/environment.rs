@@ -1,5 +1,6 @@
 //! Модуль Окружающей Среды: Удушье, Падения, Огонь (Environment, стр. 92-96).
 
+use crate::Meters;
 use crate::rules::resolution::resolve_skill;
 use crate::types::{
     AsphyxiationResult, D100Roll, FallingResult, HitPoints, SkillRating, SuccessLevel,
@@ -16,7 +17,7 @@ use crate::types::{
 /// `rolled_damage_dice` — массив брошенных кубиков D6 (сервер кидает по 1D6 за каждые 3м).
 #[must_use]
 pub fn resolve_falling(
-    distance_meters: u16,
+    distance_meters: Meters,
     mitigation_roll_result: Option<SuccessLevel>,
     rolled_damage_dice: &[u16], // Результаты D6
 ) -> FallingResult {
@@ -24,7 +25,7 @@ pub fn resolve_falling(
     // (обычно 20D6, что соответствует ~60 метрам — скорость, после которой урон не растёт из-за предельной скорости падения).
     // 1D6 урона за каждые полные 3 метра (стр. 94)
     const MAX_FALLING_DICE: usize = 20;
-    let dice_count = ((distance_meters / 3) as usize).min(MAX_FALLING_DICE);
+    let dice_count = ((distance_meters.get() / 3) as usize).min(MAX_FALLING_DICE);
 
     // Если падение меньше 3 метров, урона нет
     if dice_count == 0 {
@@ -111,7 +112,7 @@ mod tests {
         // Падение на 10 метров -> 3D6 урона.
         let dice = vec![4, 2, 5]; // Сумма = 11
 
-        let result = resolve_falling(10, None, &dice);
+        let result = resolve_falling(Meters(10), None, &dice);
         assert_eq!(result.damage_taken.get(), 11);
         assert!(!result.mitigated);
     }
@@ -122,7 +123,7 @@ mod tests {
         // Успех (Success) убирает 1 кубик. Убираем наибольший (5). Остается 4+2=6.
         let dice = vec![4, 2, 5];
 
-        let result = resolve_falling(10, Some(SuccessLevel::Success), &dice);
+        let result = resolve_falling(Meters(10), Some(SuccessLevel::Success), &dice);
         assert_eq!(result.damage_taken.get(), 6);
         assert!(result.mitigated);
     }
@@ -132,7 +133,7 @@ mod tests {
         // 10 метров -> 3D6. Крит убирает 3D6. Урон должен стать 0.
         let dice = vec![6, 6, 6];
 
-        let result = resolve_falling(10, Some(SuccessLevel::CriticalSuccess), &dice);
+        let result = resolve_falling(Meters(10), Some(SuccessLevel::CriticalSuccess), &dice);
         assert_eq!(result.damage_taken.get(), 0);
         assert!(result.mitigated);
     }

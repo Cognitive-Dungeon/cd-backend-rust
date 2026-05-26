@@ -56,6 +56,8 @@ pub enum DiseaseType {
     Pox,      // Бьет по CHA
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DiseaseSeverity {
     None,
     Mild,
@@ -86,16 +88,6 @@ pub enum AsphyxiationSource {
     PoisonGas,     // Ядовитый газ
     Strangulation, // Удушение веревкой/руками
     Vacuum,        // Вакуум (космос)
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SpeedOfEffect {
-    Instantaneous,
-    CombatRounds(u16),
-    Minutes(u16),
-    Hours(u16),
-    Days(u16),
 }
 
 /// Результат падения с высоты.

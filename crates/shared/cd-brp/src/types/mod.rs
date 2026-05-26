@@ -18,6 +18,7 @@ pub mod progression;
 pub mod psychology;
 pub mod skills;
 pub mod stats;
+pub mod time;
 pub mod vehicles;
 
 // --- Реэкспорты для удобного доступа через `cd_brp::...` ---

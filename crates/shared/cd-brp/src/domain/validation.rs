@@ -2,7 +2,7 @@
 use std::collections::BTreeMap;
 use thiserror::Error;
 
-use crate::domain::character::{CharacterProfile, DerivedStats};
+use crate::domain::character::CharacterProfile;
 use crate::domain::chars::CharacteristicBlock;
 use crate::progression::ExperienceChecks;
 use crate::rules::character::{

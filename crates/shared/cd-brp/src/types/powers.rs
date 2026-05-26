@@ -1,4 +1,6 @@
-use crate::{HitPoints, PowerPoints, SuccessLevel, types::core::PowerLevel};
+use crate::{
+    Characteristic, HitPoints, Meters, PowerPoints, SuccessLevel, types::core::PowerLevel,
+};
 use serde::{Deserialize, Serialize};
 
 /// Обертка над PowerLevel для модуля Сил с расчетом "веса бюджета"
@@ -230,4 +232,47 @@ pub enum PowerActivationResult {
     },
     /// У персонажа не хватило Power Points для активации.
     NotEnoughPowerPoints,
+}
+
+/// Дальность действия способности.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PowerRange {
+    SelfOnly,
+    Touch,
+    Distance(Meters),
+    Sight, // В пределах видимости
+}
+
+/// Длительность действия способности.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PowerDuration {
+    Instantaneous,     // Мгновенно (урон нанесен и всё)
+    CombatRounds(u16), // N раундов
+    Minutes(u16),
+    Hours(u16),
+    Active, // Пока кастер поддерживает концентрацию / тратит ману
+}
+
+/// Как расходуются очки магии на эту способность.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum PowerCost {
+    /// Фиксированная цена (например, всегда 2 MP)
+    Fixed(PowerPoints),
+    /// Цена за каждый уровень силы (как в заклинании Fire: 3 MP за уровень)
+    PerLevel(PowerPoints),
+    /// Свободная трата (от min до max), часто в псионике
+    Variable { min: PowerPoints, max: PowerPoints },
+}
+
+/// Возможные защиты от способности
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PowerDefense {
+    None,         // Нельзя избежать (кроме сопротивления магии)
+    DodgeAllowed, // Можно увернуться (как от Fire)
+    ParryAllowed,
+    ResistanceTable(Characteristic, Characteristic), // Например, POW vs POW
 }
