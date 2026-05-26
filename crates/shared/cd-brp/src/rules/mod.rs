@@ -9,6 +9,7 @@ pub mod experience;
 pub mod fatigue;
 pub mod hit_locations;
 pub mod modifiers;
+pub mod powers;
 pub mod ranged_combat;
 pub mod resolution;
 pub mod sanity;

@@ -1,4 +1,4 @@
-use crate::types::core::PowerLevel;
+use crate::{HitPoints, PowerPoints, SuccessLevel, types::core::PowerLevel};
 use serde::{Deserialize, Serialize};
 
 /// Обертка над PowerLevel для модуля Сил с расчетом "веса бюджета"
@@ -209,4 +209,25 @@ pub enum PowerType {
     Psychic(PsychicAbility),
     Sorcery(SorcerySpell),
     Superpower(Superpower),
+}
+
+/// Контекст и результат попытки использовать силу (каст заклинания, активация псионики).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PowerActivationResult {
+    /// Сила успешно активирована. Возвращает уровень успеха (для эффектов) и потраченные MP.
+    Success {
+        level: SuccessLevel,
+        mp_spent: PowerPoints,
+    },
+    /// Провал броска. Сила не сработала. По правилам BRP, при провале каста
+    /// обычно тратится 1 MP (или половина маны, зависит от опций). Мы фиксируем потерю 1 MP.
+    Failure { mp_spent: PowerPoints },
+    /// Критический провал (Fumble). Может вызвать откат (Backfire), потерю всех вложенных MP
+    /// или даже урон самому заклинателю.
+    Fumble {
+        mp_spent: PowerPoints,
+        backfire_damage: Option<HitPoints>,
+    },
+    /// У персонажа не хватило Power Points для активации.
+    NotEnoughPowerPoints,
 }
