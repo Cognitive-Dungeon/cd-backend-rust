@@ -1,5 +1,7 @@
 use super::error::TypeError;
 use crate::constants::{D100_MAX, D100_MIN};
+use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -30,11 +32,27 @@ impl D100Roll {
     pub const fn get(self) -> u16 {
         self.0
     }
+
+    pub fn roll<R: Rng + ?Sized>(rng: &mut R) -> Self {
+        Self(rng.random_range(D100_MIN..=D100_MAX))
+    }
 }
 
 impl fmt::Display for D100Roll {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl std::str::FromStr for D100Roll {
+    type Err = crate::types::error::TypeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let val = s
+            .trim()
+            .parse::<u16>()
+            .map_err(|_| crate::types::error::TypeError::NegativeValue)?;
+        Self::try_new(val)
     }
 }
 
@@ -99,6 +117,17 @@ impl DieType {
             Self::D100 => 100,
         }
     }
+
+    pub fn roll<R: Rng + ?Sized>(self, rng: &mut R) -> u16 {
+        rng.random_range(1..=self.faces())
+    }
+}
+
+impl fmt::Display for DieType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Debug вывод для DieType::D6 это "D6", что нам идеально подходит
+        write!(f, "{:?}", self)
+    }
 }
 
 /// Знак модификатора (положительный или отрицательный)
@@ -121,6 +150,27 @@ pub enum DamageModifier {
         count: u8,
         dice: DieType,
     },
+}
+
+impl DamageModifier {
+    /// Генерирует итоговое значение модификатора урона.
+    /// ВАЖНО: Возвращает `i16`, так как модификатор может быть отрицательным (например, -1D4)!
+    pub fn roll<R: Rng + ?Sized>(&self, rng: &mut R) -> i16 {
+        match self {
+            Self::None => 0,
+            Self::Modifier { sign, count, dice } => {
+                let mut total: i16 = 0;
+                for _ in 0..*count {
+                    total += dice.roll(rng) as i16;
+                }
+
+                match sign {
+                    ModifierSign::Positive => total,
+                    ModifierSign::Negative => -total,
+                }
+            }
+        }
+    }
 }
 
 impl fmt::Display for DamageModifier {
@@ -152,6 +202,34 @@ impl DiceExpression {
             count,
             die,
             flat_modifier,
+        }
+    }
+
+    /// Бросает кубики и прибавляет статический модификатор.
+    /// Возвращает `u16`, так как базовый урон самого оружия (без учета Damage Modifier)
+    /// не уходит в минус (он ограничивается 0).
+    pub fn roll<R: Rng + ?Sized>(&self, rng: &mut R) -> u16 {
+        let mut total: i32 = 0;
+        for _ in 0..self.count {
+            total += self.die.roll(rng) as i32;
+        }
+
+        total += self.flat_modifier as i32;
+
+        // Урон от самого кубика оружия не может быть отрицательным
+        total.max(0) as u16
+    }
+}
+
+impl fmt::Display for DiceExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.flat_modifier == 0 {
+            write!(f, "{}{}", self.count, self.die)
+        } else if self.flat_modifier > 0 {
+            write!(f, "{}{}+{}", self.count, self.die, self.flat_modifier)
+        } else {
+            // У flat_modifier уже есть знак минуса, так как это i16
+            write!(f, "{}{}{}", self.count, self.die, self.flat_modifier)
         }
     }
 }

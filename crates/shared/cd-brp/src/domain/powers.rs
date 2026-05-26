@@ -1,9 +1,6 @@
 use crate::{
     time::BrpDuration,
-    types::{
-        DamageType, DefId, DiceExpression, PowerCost, PowerDefense, PowerDuration, PowerRange,
-        PowerType,
-    },
+    types::{DamageType, DefId, DiceExpression, PowerCost, PowerDefense, PowerRange, PowerType},
 };
 use serde::{Deserialize, Serialize};
 

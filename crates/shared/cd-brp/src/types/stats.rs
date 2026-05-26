@@ -182,6 +182,14 @@ impl std::ops::Sub for SkillRating {
     }
 }
 
+impl std::ops::Sub<u16> for SkillRating {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: u16) -> Self::Output {
+        Self(self.0.saturating_sub(rhs))
+    }
+}
+
 impl std::ops::AddAssign for SkillRating {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
