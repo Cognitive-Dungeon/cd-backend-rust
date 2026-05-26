@@ -4,6 +4,7 @@ pub mod character;
 pub mod combat_matrix;
 pub mod damage;
 pub mod encumbrance;
+pub mod environment;
 pub mod experience;
 pub mod fatigue;
 pub mod hit_locations;

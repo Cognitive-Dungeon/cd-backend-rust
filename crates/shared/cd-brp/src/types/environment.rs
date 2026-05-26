@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::HitPoints;
+
 // --- ПОГОДА И СРЕДА (стр. 119-120) ---
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -94,4 +96,25 @@ pub enum SpeedOfEffect {
     Minutes(u16),
     Hours(u16),
     Days(u16),
+}
+
+/// Результат падения с высоты.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FallingResult {
+    /// Количество урона, которое получает персонаж.
+    /// Стр. 94: Броня обычно НЕ защищает от урона от падения, кроме особых случаев.
+    pub damage_taken: HitPoints,
+    /// Произошло ли успешное смягчение падения (уменьшает урон).
+    pub mitigated: bool,
+}
+
+/// Статус удушья в текущем раунде.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AsphyxiationResult {
+    /// Персонаж успешно задержал дыхание или перенес газ (урона нет).
+    Safe,
+    /// Персонаж не выдержал. Получает прямой урон в HP (броня не спасает).
+    TakesDamage(HitPoints),
+    /// Персонаж критически провалил проверку удушья. Падает в обморок.
+    Unconscious,
 }
