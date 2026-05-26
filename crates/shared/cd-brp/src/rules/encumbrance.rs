@@ -6,7 +6,7 @@ use crate::{Characteristic, Con, SkillType, Stat, Str, math::frac_u16, types::En
 /// По умолчанию это STR.
 #[must_use]
 pub const fn calculate_max_enc(str_stat: Stat<Str>) -> EncumbrancePoints {
-    EncumbrancePoints::new(str_stat.get())
+    EncumbrancePoints::from_stat(str_stat)
 }
 
 /// Вычисляет предел нагрузки для длительных переходов (prolonged maneuvers).
@@ -17,7 +17,7 @@ pub const fn calculate_prolonged_max_enc(
     con_stat: Stat<Con>,
 ) -> EncumbrancePoints {
     let sum = str_stat.get().saturating_add(con_stat.get());
-    EncumbrancePoints::new(frac_u16::half_ceil(sum))
+    EncumbrancePoints::from_u16(frac_u16::half_ceil(sum))
 }
 
 /// Контейнер со всеми активными штрафами от текущей нагрузки.
@@ -32,26 +32,26 @@ impl EncumbrancePenalties {
     #[must_use]
     pub const fn new(max: EncumbrancePoints, current: EncumbrancePoints) -> Self {
         Self {
-            excess: EncumbrancePoints(current.get().saturating_sub(max.get())),
+            excess: current.saturating_sub(max.get()),
         }
     }
 
     /// Штраф к скорости передвижения (MOV). "-1 to Movement (MOV)" за каждый лишний ENC.
     #[must_use]
     pub const fn mov_penalty(&self) -> u16 {
-        self.excess.get()
+        self.excess.get() as u16
     }
 
     /// Штраф к навыкам в процентах. "-5% to all..." за каждый лишний ENC.
     #[must_use]
     pub const fn skill_penalty_percent(&self) -> u16 {
-        self.excess.get().saturating_mul(5)
+        self.excess.get().saturating_mul(5) as u16
     }
 
     /// Потеря очков усталости. "loses 1 fatigue point per turn per additional ENC".
     #[must_use]
     pub const fn fatigue_drain_per_turn(&self) -> u16 {
-        self.excess.get()
+        self.excess.get() as u16
     }
 
     /// Проверяет, применяется ли штраф `skill_penalty_percent` к конкретному навыку.
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn test_penalty_applies_to_correct_skills() {
         let penalties = EncumbrancePenalties {
-            excess: EncumbrancePoints(1),
+            excess: EncumbrancePoints::new(1),
         };
 
         // Применяется:
