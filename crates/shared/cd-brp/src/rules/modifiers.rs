@@ -3,7 +3,7 @@
 use crate::domain::chars::CharacteristicBlock;
 use crate::math::BrpFractions;
 use crate::types::{DifficultyModifier, GameSessionConfig, SkillCategory, SkillRating};
-use crate::{D100_MAX, HUMAN_AVERAGE_STAT};
+use crate::{D100_MAX, HUMAN_AVERAGE_STAT, SkillModifier};
 
 /// Пороговые значения рейтингов навыков (стр. 67)
 pub mod skill_rating {
@@ -123,7 +123,7 @@ pub fn calculate_simple_category_bonus(
 pub fn calculate_effective_skill(
     nominal_rating: SkillRating,
     difficulty: DifficultyModifier,
-    situational_modifiers_sum: i16, // Сумма всех +/- % (напр. погода, инструменты)
+    situational_modifier: SkillModifier, // Сумма всех +/- % (напр. погода, инструменты)
 ) -> SkillRating {
     // Крайние случаи: не модифицируются ситуативно
     if matches!(
@@ -137,11 +137,7 @@ pub fn calculate_effective_skill(
     let rating_after_difficulty = apply_difficulty(nominal_rating, difficulty);
 
     // 2. Применяем ситуативные модификаторы (+20%, -50% и т.д.)
-    let final_value = (rating_after_difficulty.get() as i16)
-        .saturating_add(situational_modifiers_sum)
-        .clamp(0, D100_MAX as i16) as u16;
-
-    SkillRating::new(final_value)
+    rating_after_difficulty + situational_modifier
 }
 
 #[cfg(test)]
@@ -168,7 +164,7 @@ mod tests {
         let result = calculate_effective_skill(
             base,
             DifficultyModifier::Difficult, // 50 → 25
-            30,                            // +30% за отличные инструменты
+            SkillModifier::new(30),        // +30% за отличные инструменты
         );
         assert_eq!(result.get(), 55); // 25 + 30 = 55, не больше 100
     }
@@ -179,8 +175,28 @@ mod tests {
         let result = calculate_effective_skill(
             base,
             DifficultyModifier::Automatic,
-            -50, // Даже огромный штраф не влияет
+            SkillModifier::new(-50), // Даже огромный штраф не влияет
         );
         assert!(result.is_automatic());
+    }
+
+    #[test]
+    fn test_effective_skill_with_negative_modifier() {
+        let base = SkillRating::new(50);
+        // Difficult уполовинит навык до 25.
+        // Штраф -30 попытается опустить его до -5, но saturating остановит на 0.
+        let result =
+            calculate_effective_skill(base, DifficultyModifier::Difficult, SkillModifier::new(-30));
+        assert_eq!(result.get(), 0);
+    }
+
+    #[test]
+    fn test_effective_skill_order_of_operations() {
+        let base = SkillRating::new(60);
+        // СНАЧАЛА Difficult: 60 / 2 = 30.
+        // ЗАТЕМ бонус +20: 30 + 20 = 50.
+        let result =
+            calculate_effective_skill(base, DifficultyModifier::Difficult, SkillModifier::new(20));
+        assert_eq!(result.get(), 50);
     }
 }

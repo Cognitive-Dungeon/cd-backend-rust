@@ -3,6 +3,7 @@
 pub mod character;
 pub mod combat_matrix;
 pub mod damage;
+pub mod defense;
 pub mod encumbrance;
 pub mod environment;
 pub mod experience;

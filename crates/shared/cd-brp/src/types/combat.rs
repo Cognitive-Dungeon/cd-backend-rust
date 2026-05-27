@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::{HandednessReq, WeaponClass};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CombatPhase {
@@ -95,5 +97,79 @@ impl StrikeRank {
     #[inline]
     pub const fn get(self) -> u8 {
         self.0
+    }
+}
+
+/// Каким предметом или действием персонаж пытается защититься.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DefenseMethod {
+    /// Уклонение (использует только тело).
+    Dodge,
+    /// Парирование одноручным или двуручным оружием (меч, копье).
+    WeaponParry {
+        class: WeaponClass,
+        handedness: HandednessReq,
+        /// Использовалось ли это оружие для атаки в текущем раунде (Strike Rank).
+        used_to_attack_this_round: bool,
+    },
+    /// Парирование щитом (отдельный предмет с огромным запасом прочности).
+    ShieldParry {
+        /// В BRP щиты можно использовать для пассивного прикрытия.
+        is_actively_blocking: bool,
+    },
+}
+
+/// Определяет тип входящей атаки для проверки легальности защиты.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IncomingAttackType {
+    /// Удар в ближнем бою (Меч, Кулак, Когти)
+    Melee,
+    /// Бросок/Выстрел мускульной силой (Копье, Стрела, Нож)
+    ThrownOrArrow,
+    /// Огнестрельное оружие или Энергетический луч
+    FirearmOrEnergy,
+    /// Атака по площади (Взрыв, Дыхание Дракона)
+    AreaOfEffect,
+}
+
+impl IncomingAttackType {
+    /// Проверяет, физически возможно ли парировать данную атаку указанным предметом.
+    /// Эта функция должна вызываться до любых бросков кубиков!
+    #[must_use]
+    pub const fn is_parry_legal(self, defender_weapon_class: WeaponClass) -> bool {
+        match self {
+            Self::Melee => {
+                // В ближнем бою можно парировать любым оружием или щитом.
+                // Исключения составляют луки/арбалеты (ими сложно отбить меч, но возможно по опциональным правилам).
+                true
+            }
+            Self::ThrownOrArrow => {
+                // Стрелы и дротики можно отбивать ТОЛЬКО щитом (Стр. 64-65).
+                matches!(defender_weapon_class, WeaponClass::Shield)
+            }
+            Self::FirearmOrEnergy => {
+                // Пули и лазеры парировать невозможно.
+                false
+            }
+            Self::AreaOfEffect => {
+                // От взрыва нельзя защититься парированием (но иногда можно укрыться за ОГРОМНЫМ щитом,
+                // здесь базовая реализация - false).
+                // TODO: Когда появятся классы щитов добавить сюда
+                false
+            }
+        }
+    }
+
+    /// Проверяет, физически возможно ли уклониться (Dodge) от атаки.
+    #[must_use]
+    pub const fn is_dodge_legal(self) -> bool {
+        match self {
+            // Уклониться можно от ударов, стрел и даже выстрелов (уворот с линии огня).
+            Self::Melee | Self::ThrownOrArrow | Self::FirearmOrEnergy => true,
+
+            // От АоЕ (взрыв гранаты в замкнутом помещении) часто уклониться нельзя,
+            // либо уклонение дает только уменьшение урона (оставляем на усмотрение GM/сервера, базово - сложно).
+            Self::AreaOfEffect => false,
+        }
     }
 }

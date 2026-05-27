@@ -1,9 +1,10 @@
 // crates/shared/cd-brp/src/rules/ranged.rs
 //! Модуль дистанционного боя (Ranged Combat, стр. 60-65).
 
-use crate::rules::modifiers::apply_difficulty;
 use crate::types::{DifficultyModifier, RangeCategory, SkillRating, WeaponClass, WeaponPropulsion};
-use crate::{CloudCover, Precipitation, Siz, Stat, WindForce, calculate_effective_skill};
+use crate::{
+    CloudCover, Precipitation, Siz, SkillModifier, Stat, WindForce, calculate_effective_skill,
+};
 
 /// Входящие данные для расчета шанса попадания выстрела/броска
 pub struct RangedShotContext {
@@ -29,7 +30,7 @@ pub struct RangedShotContext {
 
     // --- Суммарный модификатор от состояний (Buffs/Debuffs) ---
     // Сюда сервер кладет сумму всех бонусов от крафта, баффов и штрафов (например, -20% за рану).
-    pub situational_modifiers_sum: i16,
+    pub situational_modifiers_sum: SkillModifier,
 }
 
 /// Вычисляет финальный шанс попадания при дистанционной атаке.

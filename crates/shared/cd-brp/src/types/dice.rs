@@ -319,7 +319,7 @@ impl std::str::FromStr for DiceExpression {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.replace(" ", "").to_uppercase(); // Убираем пробелы и приводим к "1D8+2"
 
-        let split_char = if s.contains('+') {
+        let _split_char = if s.contains('+') {
             '+'
         } else if s.contains('-') {
             '-'

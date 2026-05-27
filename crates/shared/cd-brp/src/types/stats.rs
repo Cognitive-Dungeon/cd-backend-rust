@@ -349,3 +349,49 @@ impl<'de> Deserialize<'de> for SkillRating {
         deserializer.deserialize_any(SkillRatingVisitor)
     }
 }
+
+/// Строгий тип для аддитивного модификатора навыка (Situational Modifier, стр. 24).
+/// Представляет фиксированные проценты (+20%, -15%), которые применяются к базовому шансу.
+/// В отличие от `SkillRating`, может быть отрицательным.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct SkillModifier(i16);
+
+impl SkillModifier {
+    pub const ZERO: Self = Self(0);
+
+    #[inline]
+    pub const fn new(val: i16) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> i16 {
+        self.0
+    }
+}
+
+// Позволяет складывать два модификатора вместе (например, +10% от баффа и -20% от раны)
+impl std::ops::Add for SkillModifier {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0.saturating_add(rhs.0))
+    }
+}
+
+// Позволяет применять модификатор к SkillRating
+impl std::ops::Add<SkillModifier> for SkillRating {
+    type Output = Self;
+    #[inline]
+    fn add(self, modifier: SkillModifier) -> Self::Output {
+        let mod_val = modifier.get();
+        if mod_val >= 0 {
+            // Если модификатор положительный, используем наше сложение
+            self + (mod_val as u16)
+        } else {
+            // Если отрицательный, превращаем в u16 и используем наше вычитание (с защитой от нуля)
+            self - (mod_val.unsigned_abs())
+        }
+    }
+}
