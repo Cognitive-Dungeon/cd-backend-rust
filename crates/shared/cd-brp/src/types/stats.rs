@@ -15,8 +15,20 @@ pub struct Stat<T: CharacteristicMarker> {
 }
 
 impl<T: CharacteristicMarker> Stat<T> {
+    /// Создает новую характеристику со значением 1.
+    /// В BRP базовые характеристики живых существ не могут быть равны 0.
+    /// Если нужно описывать нежить (CON 0), используй `new_unchecked`.
     #[inline]
     pub const fn new(value: u16) -> Self {
+        Self {
+            value: if value == 0 { 1 } else { value },
+            _marker: PhantomData,
+        }
+    }
+
+    /// Позволяет создать характеристику со значением 0 (для нежити, конструктов и т.д.).
+    #[inline]
+    pub const fn new_unchecked(value: u16) -> Self {
         Self {
             value,
             _marker: PhantomData,
@@ -40,6 +52,59 @@ impl<T: CharacteristicMarker> Stat<T> {
     #[inline]
     pub const fn x5_chance(self) -> SkillRating {
         self.chance_multiplier(5)
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::Add for Stat<T> {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new_unchecked(self.value.saturating_add(rhs.value))
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::Add<u16> for Stat<T> {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: u16) -> Self::Output {
+        Self::new_unchecked(self.value.saturating_add(rhs))
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::Sub for Stat<T> {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        // При вычитании стат может упасть до 0. В BRP это означает смерть/паралич.
+        Self::new_unchecked(self.value.saturating_sub(rhs.value))
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::Sub<u16> for Stat<T> {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: u16) -> Self::Output {
+        Self::new_unchecked(self.value.saturating_sub(rhs))
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::AddAssign<u16> for Stat<T> {
+    #[inline]
+    fn add_assign(&mut self, rhs: u16) {
+        self.value = self.value.saturating_add(rhs);
+    }
+}
+
+impl<T: CharacteristicMarker> std::ops::SubAssign<u16> for Stat<T> {
+    #[inline]
+    fn sub_assign(&mut self, rhs: u16) {
+        self.value = self.value.saturating_sub(rhs);
+    }
+}
+
+impl<T: CharacteristicMarker> fmt::Display for Stat<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({})", self.value, T::ABBREVIATION)
     }
 }
 
@@ -96,12 +161,6 @@ impl Stat<Edu> {
     #[inline]
     pub const fn know_chance(self) -> SkillRating {
         self.x5_chance()
-    }
-}
-
-impl<T: CharacteristicMarker> fmt::Display for Stat<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ({})", self.value, T::ABBREVIATION)
     }
 }
 
