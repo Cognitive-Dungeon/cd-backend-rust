@@ -1,5 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+/// Состояние предмета.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ItemCondition {
+    #[default]
+    Intact,
+    Damaged,
+    Broken,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum WealthLevel {

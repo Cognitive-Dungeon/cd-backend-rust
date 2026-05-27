@@ -8,4 +8,3 @@ pub mod powers;
 pub mod validation;
 
 pub use chars::CharacteristicBlock;
-pub use gear::WeaponBlueprint;

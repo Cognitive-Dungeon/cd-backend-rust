@@ -154,3 +154,86 @@ impl CombatRounds {
         self.0
     }
 }
+
+/// Строгий тип для базовой стоимости предмета (Base Value).
+/// В MMO/VTT представляет универсальную минимальную единицу валюты сеттинга
+/// (например, медные монеты, кредиты, центы).
+/// Опционально для классического BRP, но критически важно для машинной реализации торговли.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
+#[serde(transparent)]
+pub struct Currency(u32); // Используем u32, так как экономика MMO требует больших чисел
+
+impl Currency {
+    pub const ZERO: Self = Self(0);
+
+    #[inline]
+    pub const fn new(val: u32) -> Self {
+        Self(val)
+    }
+
+    #[inline]
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+
+    /// Безопасное умножение (например, для продажи группы предметов или наценок)
+    #[inline]
+    pub const fn saturating_mul(self, multiplier: u32) -> Self {
+        Self(self.0.saturating_mul(multiplier))
+    }
+
+    /// Безопасное деление (например, торговцы скупают лут за 50% цены)
+    #[inline]
+    pub const fn saturating_div(self, divisor: u32) -> Self {
+        if divisor == 0 {
+            Self::ZERO
+        } else {
+            Self(self.0 / divisor)
+        }
+    }
+}
+
+impl std::ops::Add for Currency {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0.saturating_add(rhs.0))
+    }
+}
+
+impl std::ops::Sub for Currency {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0.saturating_sub(rhs.0))
+    }
+}
+
+impl std::ops::AddAssign for Currency {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 = self.0.saturating_add(rhs.0);
+    }
+}
+
+impl std::ops::SubAssign for Currency {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 = self.0.saturating_sub(rhs.0);
+    }
+}
+
+// Суммирование коллекций (для подсчета стоимости всего инвентаря)
+impl std::iter::Sum for Currency {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::ZERO, |acc, val| acc + val)
+    }
+}
+
+impl std::fmt::Display for Currency {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
