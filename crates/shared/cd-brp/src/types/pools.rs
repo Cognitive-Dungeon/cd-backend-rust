@@ -226,6 +226,13 @@ macro_rules! pool_common_impl {
             }
 
             #[inline]
+            #[must_use]
+            pub const fn saturating_add(self, adder: i16) -> Self {
+                Self(self.0.saturating_add(adder))
+            }
+
+            #[inline]
+            #[must_use]
             pub const fn saturating_sub(self, substractor: i16) -> Self {
                 Self(self.0.saturating_sub(substractor))
             }
@@ -386,7 +393,7 @@ macro_rules! pool_common_impl {
     };
 }
 
-define_pool_type!(HitPoints, "Очки здоровья (HP). Могут быть < 0.");
+define_pool_type!(HitPoints, "Очки здоровья (HP).");
 define_pool_type!(PowerPoints, "Очки магии/энергии (MP).", default = 5);
 define_pool_type!(
     FatiguePoints,
@@ -399,9 +406,11 @@ define_pool_type!(
     range = 0..=99,
     default = 99
 );
-
 define_pool_type!(
     EncumbrancePoints,
     "Единицы измерения нагрузки (ENC) (Encumbrance, стр. 31).",
     no_negative
 );
+define_pool_type!(DamagePoints, "Очки сырого урона (Damage).", no_negative);
+
+define_pool_type!(ArmorPoints, "Очки брони/защиты (Armor Value).", no_negative);

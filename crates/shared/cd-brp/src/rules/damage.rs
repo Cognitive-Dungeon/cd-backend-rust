@@ -21,14 +21,14 @@ impl DamageApplication {
     #[inline]
     #[must_use]
     const fn new(
-        actual: i16,
-        mitigated: i16,
+        actual: HitPoints,
+        mitigated: HitPoints,
         special: Option<SpecialSuccessEffect>,
         is_crit: bool,
     ) -> Self {
         Self {
-            actual_damage_taken: HitPoints::new(actual),
-            armor_mitigated: HitPoints::new(mitigated),
+            actual_damage_taken: actual,
+            armor_mitigated: mitigated,
             special_triggered: special,
             is_critical: is_crit,
         }
@@ -45,7 +45,7 @@ impl DamageApplication {
     #[inline]
     #[must_use]
     pub const fn armor_penetrated(&self) -> bool {
-        !self.armor_mitigated.is_positive() && self.special_triggered.is_some()
+        !self.did_damage() && self.special_triggered.is_some()
     }
 }
 
@@ -67,7 +67,7 @@ pub fn calculate_actual_damage(
 
     // Вспомогательная функция: применяет множитель Impale ТОЛЬКО к урону оружия
     #[inline]
-    const fn apply_impale(base_dmg: u16, special: SpecialSuccessEffect) -> u16 {
+    const fn apply_impale(base_dmg: DamagePoints, special: SpecialSuccessEffect) -> DamagePoints {
         if matches!(special, SpecialSuccessEffect::Impaling) {
             base_dmg.saturating_mul(2)
         } else {
@@ -77,40 +77,32 @@ pub fn calculate_actual_damage(
 
     // Вспомогательная функция: безопасно прибавляет Damage Modifier (с защитой < 0)
     #[inline]
-    const fn apply_dm(weapon_dmg: u16, dm: i16) -> u16 {
-        let total = (weapon_dmg as i32).saturating_add(dm as i32);
-        if total < 0 { 0 } else { total as u16 }
-    }
-
-    // Безопасная конвертация u16 → i16 с насыщением (защита от паник)
-    #[inline]
-    const fn saturating_cast_u16_to_i16(value: u16) -> i16 {
-        if value > i16::MAX as u16 {
-            i16::MAX
-        } else {
-            value as i16
-        }
+    const fn apply_dm(weapon_dmg: DamagePoints, dm: i16) -> DamagePoints {
+        let dm_points = DamagePoints::new(dm);
+        // TODO: Ждём const traits в stable чтобы упростить до (weapon_dmg + dm_points)
+        let total = weapon_dmg.saturating_add(dm_points.get());
+        total.clamp_to_min(DamagePoints::ZERO)
     }
 
     match hit_type {
         // ─────────────────────────────────────────────────────────────
         // Уворот: урона нет, броня не тратится
         // ─────────────────────────────────────────────────────────────
-        Evaded => DamageApplication::new(0, 0, None, false),
+        Evaded => DamageApplication::new(HitPoints::ZERO, HitPoints::ZERO, None, false),
 
         // ─────────────────────────────────────────────────────────────
         // Обычное попадание: урон - броня
         // ─────────────────────────────────────────────────────────────
         Normal => {
-            let total_dmg = apply_dm(rolled_weapon_damage.get(), damage_modifier_roll);
+            let total_dmg = apply_dm(rolled_weapon_damage, damage_modifier_roll);
             let armor = armor_value.get();
 
-            let actual = total_dmg.saturating_sub(armor);
-            let mitigated = armor.min(total_dmg); // Явно: сколько броня реально поглотила
+            let actual = total_dmg.saturating_sub(armor).get();
+            let mitigated = armor.min(total_dmg.get()); // Явно: сколько броня реально поглотила
 
             DamageApplication::new(
-                saturating_cast_u16_to_i16(actual),
-                saturating_cast_u16_to_i16(mitigated),
+                HitPoints::new(actual),
+                HitPoints::new(mitigated),
                 None,
                 false,
             )
@@ -121,17 +113,17 @@ pub fn calculate_actual_damage(
         // ─────────────────────────────────────────────────────────────
         Special => {
             // 1. Удваиваем ТОЛЬКО урон оружия (если Impale)
-            let weapon_dmg = apply_impale(rolled_weapon_damage.get(), weapon_special);
+            let weapon_dmg = apply_impale(rolled_weapon_damage, weapon_special);
             // 2. Добавляем Damage Modifier (не удвоенный!)
             let total_dmg = apply_dm(weapon_dmg, damage_modifier_roll);
 
             let armor = armor_value.get();
-            let actual = total_dmg.saturating_sub(armor);
-            let mitigated = armor.min(total_dmg);
+            let actual = total_dmg.saturating_sub(armor_value.get()).get();
+            let mitigated = armor.min(total_dmg.get());
 
             DamageApplication::new(
-                saturating_cast_u16_to_i16(actual),
-                saturating_cast_u16_to_i16(mitigated),
+                HitPoints::new(actual),
+                HitPoints::new(mitigated),
                 Some(weapon_special),
                 false,
             )
@@ -142,13 +134,13 @@ pub fn calculate_actual_damage(
         // ─────────────────────────────────────────────────────────────
         Critical => {
             // 1. Берем МАКСИМАЛЬНЫЙ урон оружия и удваиваем его (если Impale)
-            let weapon_dmg = apply_impale(max_weapon_damage.get(), weapon_special);
+            let weapon_dmg = apply_impale(max_weapon_damage, weapon_special);
             // 2. Добавляем обычный, брошенный Damage Modifier
-            let total_dmg = apply_dm(weapon_dmg, damage_modifier_roll);
+            let total_dmg = apply_dm(weapon_dmg, damage_modifier_roll).get();
 
             DamageApplication::new(
-                saturating_cast_u16_to_i16(total_dmg),
-                0, // Броня полностью игнорируется при крите
+                HitPoints::new(total_dmg), // Весь урон идет в цель
+                HitPoints::ZERO,           // Броня игнорируется
                 Some(weapon_special),
                 true,
             )
