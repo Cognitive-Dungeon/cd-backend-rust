@@ -18,8 +18,6 @@ pub mod skill_rating {
 /// Применяет множитель сложности к рейтингу навыка (стр. 23-24).
 #[must_use = "результат должен быть применён к навыку"]
 pub fn apply_difficulty(rating: SkillRating, difficulty: DifficultyModifier) -> SkillRating {
-    let val = rating.get();
-
     match difficulty {
         // Специальные значения — не участвуют в обычных расчётах
         DifficultyModifier::Automatic => SkillRating::AUTOMATIC,
@@ -28,16 +26,16 @@ pub fn apply_difficulty(rating: SkillRating, difficulty: DifficultyModifier) -> 
         // Мультипликативные модификаторы (стр. 23-24)
         DifficultyModifier::Easy => {
             // ×2, но не больше 100%
-            SkillRating::new((val.saturating_mul(2)).min(D100_MAX))
+            rating.saturating_mul(2).min(SkillRating::new(D100_MAX))
         }
         DifficultyModifier::Average => rating,
         DifficultyModifier::Difficult => {
             // ×½ с округлением вверх
-            SkillRating::new(val.half_ceil())
+            rating.half_ceil()
         }
         DifficultyModifier::Extreme => {
             // ×⅕ — стандартное значение для сложных задач в BRP
-            SkillRating::new(val.saturating_mul(20).saturating_div(100))
+            rating.saturating_mul(20).saturating_div(100)
         }
     }
 }

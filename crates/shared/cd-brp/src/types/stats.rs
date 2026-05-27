@@ -106,8 +106,7 @@ impl<T: CharacteristicMarker> fmt::Display for Stat<T> {
 }
 
 /// Строгий тип для рейтинга навыка (от 0 до бесконечности).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
-#[serde(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct SkillRating(u16);
 
 impl SkillRating {
@@ -145,6 +144,11 @@ impl SkillRating {
         Self(self.0.saturating_mul(rhs))
     }
 
+    #[inline]
+    pub const fn saturating_div(self, rhs: u16) -> Self {
+        Self(self.0.saturating_div(rhs))
+    }
+
     /// Безопасное деление (защита от деления на 0)
     #[inline]
     pub const fn checked_div(self, rhs: u16) -> Option<Self> {
@@ -152,6 +156,23 @@ impl SkillRating {
             Some(val) => Some(Self(val)),
             None => None,
         }
+    }
+}
+
+impl crate::math::BrpFractions for SkillRating {
+    #[inline]
+    fn half_ceil(self) -> Self {
+        Self(self.0.half_ceil())
+    }
+
+    #[inline]
+    fn fifth_ceil(self) -> Self {
+        Self(self.0.fifth_ceil())
+    }
+
+    #[inline]
+    fn twentieth_ceil(self) -> Self {
+        Self(self.0.twentieth_ceil())
     }
 }
 
@@ -215,11 +236,57 @@ impl fmt::Display for SkillRating {
 }
 
 impl std::str::FromStr for SkillRating {
-    type Err = std::num::ParseIntError;
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let clean_str = s.trim().trim_end_matches('%');
-        let val = clean_str.parse::<u16>()?;
-        Ok(Self(val))
+        let clean = s.trim().to_lowercase();
+
+        if clean == "auto" || clean == "automatic" {
+            return Ok(Self::AUTOMATIC);
+        }
+
+        let numeric_part = clean.trim_end_matches('%').trim();
+        match numeric_part.parse::<u16>() {
+            Ok(val) => Ok(Self(val)),
+            Err(_) => Err(format!("Invalid skill rating: '{}'", s)),
+        }
+    }
+}
+
+// Сериализуем как удобную строку с процентами (например, "65%") для читаемости
+impl Serialize for SkillRating {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+// Десериализуем из числа ИЛИ строки.
+// Позволяет писать в JSON: `"stealth": 65` или `"stealth": "65%"`
+impl<'de> Deserialize<'de> for SkillRating {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        // Serde Visitor позволяет обрабатывать разные типы входящих данных
+        struct SkillRatingVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for SkillRatingVisitor {
+            type Value = SkillRating;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a u16 integer or a string like '65%'")
+            }
+
+            fn visit_u64<E: serde::de::Error>(self, value: u64) -> Result<Self::Value, E> {
+                if value > u16::MAX as u64 {
+                    Err(E::custom(format!("SkillRating out of bounds: {}", value)))
+                } else {
+                    Ok(SkillRating::new(value as u16))
+                }
+            }
+
+            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                <SkillRating as std::str::FromStr>::from_str(value).map_err(E::custom)
+            }
+        }
+
+        deserializer.deserialize_any(SkillRatingVisitor)
     }
 }
