@@ -2,6 +2,7 @@
 
 pub mod character;
 pub mod chars;
+pub mod combat;
 pub mod environment;
 pub mod gear;
 pub mod powers;

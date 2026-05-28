@@ -1,10 +1,9 @@
 // crates/shared/cd-brp/src/rules/ranged.rs
 //! Модуль дистанционного боя (Ranged Combat, стр. 60-65).
 
+use crate::rules::calculate_effective_skill;
 use crate::types::{DifficultyModifier, RangeCategory, SkillRating, WeaponClass, WeaponPropulsion};
-use crate::{
-    CloudCover, Precipitation, Siz, SkillModifier, Stat, WindForce, calculate_effective_skill,
-};
+use crate::{CloudCover, Precipitation, Siz, SkillModifier, Stat, WindForce};
 
 /// Входящие данные для расчета шанса попадания выстрела/броска
 pub struct RangedShotContext {

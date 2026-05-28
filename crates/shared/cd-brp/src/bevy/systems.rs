@@ -14,22 +14,19 @@ pub fn apply_combat_effects_system(
     mut q_vitals: Query<&mut BRPVitals>,
 ) {
     for effect in events.read() {
-        match effect {
-            CombatEffect::Hit {
-                target_id,
-                damage_taken,
-                ..
-            } => {
-                // 1. Быстро переводим сетевой GUID в локальную Bevy Entity
-                if let Some(&entity) = entity_map.0.get(target_id) {
-                    // 2. Мутируем компоненты
-                    if let Ok(mut vitals) = q_vitals.get_mut(entity) {
-                        vitals.hp -= *damage_taken;
-                    }
+        if let CombatEffect::Hit {
+            target_id,
+            damage_taken,
+            ..
+        } = effect
+        {
+            // 1. Быстро переводим сетевой GUID в локальную Bevy Entity
+            if let Some(&entity) = entity_map.0.get(target_id) {
+                // 2. Мутируем компоненты
+                if let Ok(mut vitals) = q_vitals.get_mut(entity) {
+                    vitals.hp -= *damage_taken;
                 }
             }
-            // обработка других эффектов...
-            _ => {}
         }
     }
 }

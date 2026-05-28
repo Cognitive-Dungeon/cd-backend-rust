@@ -1,12 +1,9 @@
 //! Модуль правил защиты в бою (Defense & Multiple Actions, стр. 55).
 
 use crate::{
-    HitPoints, SkillModifier, SuccessLevel,
+    DEFAULT_MULTIPLE_ACTION_PENALTY, HitPoints, SkillModifier, SuccessLevel,
     types::{SkillRating, WeaponClass},
 };
-
-/// Константа штрафа за каждую последующую защиту в одном раунде.
-pub const MULTIPLE_DEFENSE_PENALTY: u16 = 30;
 
 /// Контекст для вычисления финального шанса защиты (Dodge или Parry).
 pub struct DefenseRatingContext {
@@ -22,7 +19,7 @@ pub struct DefenseRatingContext {
 #[must_use]
 pub fn calculate_defense_chance(ctx: DefenseRatingContext) -> SkillRating {
     // 1. Считаем кумулятивный штраф (каждая защита после первой дает -30%)
-    let penalty = ctx.previous_defenses_this_round as u16 * MULTIPLE_DEFENSE_PENALTY;
+    let penalty = ctx.previous_defenses_this_round as u16 * DEFAULT_MULTIPLE_ACTION_PENALTY;
 
     // 2. Вычитаем штраф из базового навыка
     let penalized_skill = ctx.base_skill - penalty;

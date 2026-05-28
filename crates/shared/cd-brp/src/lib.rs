@@ -15,7 +15,6 @@ pub mod types;
 
 // Эргономичные реэкспорты на уровень крейта
 pub use constants::*;
-pub use rules::*;
 pub use types::*;
 
 pub use cd_core::ObjectGuid;

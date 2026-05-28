@@ -13,3 +13,6 @@ pub const STAT_MAX: u16 = 1000;
 
 /// Базовое человеческое значение характеристики.
 pub const HUMAN_AVERAGE_STAT: u16 = 10;
+
+/// Штраф за множественные действия в раунде (стр. 48 BRP: UGE).
+pub const DEFAULT_MULTIPLE_ACTION_PENALTY: u16 = 30;

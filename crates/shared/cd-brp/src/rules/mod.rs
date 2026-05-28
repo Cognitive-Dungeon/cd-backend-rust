@@ -1,6 +1,7 @@
 //! Ядро разрешения действий: матрицы боя, модификаторы, проверка бросков.
 
 pub mod character;
+pub mod combat_flow;
 pub mod combat_matrix;
 pub mod damage;
 pub mod defense;

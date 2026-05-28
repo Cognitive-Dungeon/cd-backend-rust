@@ -132,7 +132,9 @@ impl Meters {
 
 /// Строгий тип для количества Боевых Раундов (Combat Rounds).
 /// В BRP 1 раунд = 12 секунд. 5 раундов = 1 минута.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Hash,
+)]
 #[serde(transparent)]
 pub struct CombatRounds(pub u32);
 
@@ -152,6 +154,11 @@ impl CombatRounds {
     #[inline]
     pub const fn get(self) -> u32 {
         self.0
+    }
+
+    #[inline]
+    pub const fn saturating_add(self, rhs: u32) -> Self {
+        Self(self.0.saturating_add(rhs))
     }
 }
 

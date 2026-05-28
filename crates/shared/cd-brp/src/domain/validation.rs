@@ -5,6 +5,7 @@ use thiserror::Error;
 use crate::domain::character::CharacterProfile;
 use crate::domain::chars::CharacteristicBlock;
 use crate::progression::ExperienceChecks;
+use crate::rules::calculate_category_bonus;
 use crate::rules::character::{
     calculate_derived_stats, calculate_personal_budget, calculate_professional_budget,
 };
@@ -12,7 +13,7 @@ use crate::rules::character::{
 use crate::types::{
     GameSessionConfig, PowerLevel, ProfessionId, SkillRating, SkillType, WealthLevel,
 };
-use crate::{BodyPlan, DefId, calculate_category_bonus};
+use crate::{BodyPlan, DefId};
 
 #[derive(Error, Debug)]
 pub enum ValidationError {
